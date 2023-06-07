@@ -52,7 +52,7 @@ def InverseTraj(x,dt):
     res[1] = Trajectory(map_y)
     return res
 
-def ContourTraj(x_robot,dx_robot,ddx_robot,dt,L):
+def ContourTraj(x_robot,dx_robot,dt,L):
     ## This function creates the sonar's contour from the robot's trajectory
     ## x_robot is a TrajectoryVector with the robot's state (position and orientation)
     ## dx_robot is a TrajectoryVector with the first derivative of the robot's state
@@ -67,18 +67,14 @@ def ContourTraj(x_robot,dx_robot,ddx_robot,dt,L):
 
     sin_theta = dx_robot[1].sample(dt)/sqrt(dx_robot[0].sample(dt)*dx_robot[0].sample(dt) + dx_robot[1].sample(dt)*dx_robot[1].sample(dt))
     cos_theta = dx_robot[0].sample(dt)/sqrt(dx_robot[0].sample(dt)*dx_robot[0].sample(dt) + dx_robot[1].sample(dt)*dx_robot[1].sample(dt))
-    hip = sqrt(dx_robot[0]*dx_robot[0] + dx_robot[1]*dx_robot[1])
-    dhip = (dx_robot[0]*ddx_robot[0] + dx_robot[1]*ddx_robot[1])/hip
-    dsin_theta = (ddx_robot[1]*hip - dhip*dx_robot[1])/(hip*hip)
-    dcos_theta = (ddx_robot[0]*hip - dhip*dx_robot[0])/(hip*hip)
-
+   
     #right contour
     x_right = TrajectoryVector(2)
     v_right = TrajectoryVector(2)
     x_right[0] = x_robot[0] + L*sin_theta
     x_right[1] = x_robot[1] - L*cos_theta
-    v_right[0] = dx_robot[0] + L*dsin_theta
-    v_right[1] = dx_robot[1] - L*dcos_theta
+    v_right[0] = dx_robot[0] + L*cos(x_robot[2].sample(dt))*dx_robot[2].sample(dt)
+    v_right[1] = dx_robot[1] + L*sin(x_robot[2].sample(dt))*dx_robot[2].sample(dt)
     v[0] = v_right
    
     #left contour
@@ -86,8 +82,8 @@ def ContourTraj(x_robot,dx_robot,ddx_robot,dt,L):
     v_left = TrajectoryVector(2)
     x_left[0] = x_robot[0] - L*sin_theta
     x_left[1] = x_robot[1] + L*cos_theta
-    v_left[0] = dx_robot[0] - L*dsin_theta
-    v_left[1] = dx_robot[1] + L*dcos_theta
+    v_left[0] = dx_robot[0] - L*cos(x_robot[2].sample(dt))*dx_robot[2].sample(dt)
+    v_left[1] = dx_robot[1] - L*sin(x_robot[2].sample(dt))*dx_robot[2].sample(dt)
     v[2] = InverseTraj(v_left,dt)
     
     #right to left

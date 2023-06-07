@@ -32,52 +32,63 @@ robot_size = 2.
 
 ##################### Example 2 #####################
 # Equations for creating trajectory
-x1_robot = "(5* t-5*sin(10* t))"
-dx1_robot = "(5-50*cos(10* t))"
-ddx1_robot = "(500*sin(10* t))"
-x2_robot = "(2-3*cos(10* t))"
-dx2_robot = "(30*sin(10* t))"
-ddx2_robot = "(300*cos(10* t))"
-#mission time interval
-tdomain = Interval(-0.02,1.0)
-#time step
-dt=0.001
-#Range of visibility on each side
-L = 0.5
-#Area to classify
-world = IntervalVector([[-6,10],[-5,8]])
-#size of the robot for visualization
-robot_size = 1.
+# x1_robot = "(5* t-5*sin(10* t))"
+# dx1_robot = "(5-50*cos(10* t))"
+# ddx1_robot = "(500*sin(10* t))"
+# x2_robot = "(2-3*cos(10* t))"
+# dx2_robot = "(30*sin(10* t))"
+# ddx2_robot = "(300*cos(10* t))"
+# #mission time interval
+# tdomain = Interval(-0.02,1.0)
+# #time step
+# dt=0.001
+# #Range of visibility on each side
+# L = 0.5
+# #Area to classify
+# world = IntervalVector([[-6,10],[-5,8]])
+# #size of the robot for visualization
+# robot_size = 1.
 
 ##################### Example with Sweep Back #####################
 # Equations for creating trajectory
-x1_robot = "(8*cos( t))"
-dx1_robot = "(-8*sin( t))"
-ddx1_robot = "(-8*cos( t))"
-x2_robot = "(5*sin(2* t) - t)"
-dx2_robot = "(10*cos(2* t) - 1)"
-ddx2_robot = "(-20*sin(2* t))"
-#mission time interval
-tdomain = Interval(0,2*pi)
-#time step
-dt=0.01
-#Range of visibility on each side
-L = 3.6
-#Area to classify
-world = IntervalVector([[-20,20],[-18,12]])
-#size of the robot for visualization
-robot_size = 2.
+# x1_robot = "(8*cos( t))"
+# dx1_robot = "(-8*sin( t))"
+# ddx1_robot = "(-8*cos( t))"
+# x2_robot = "(5*sin(2* t) - t)"
+# dx2_robot = "(10*cos(2* t) - 1)"
+# ddx2_robot = "(-20*sin(2* t))"
+# #mission time interval
+# tdomain = Interval(0,2*pi)
+# #time step
+# dt=0.01
+# #Range of visibility on each side
+# L = 3.6
+# #Area to classify
+# world = IntervalVector([[-20,20],[-18,12]])
+# #size of the robot for visualization
+# robot_size = 2.
 
-##################### create trajectory from equations (parametric equations can be replaced by real data) #####################
+##################### create tubes from equations (parametric equations can be replaced by real data) #####################
+
+#true
 # x_truth is the robot's pose (position and orientation)
 # dx_robot its velocity
 # ddx_robot its acceleration
 x_truth =  TrajectoryVector(tdomain, TFunction("("+x1_robot+";"+x2_robot+";atan2("+dx2_robot+","+dx1_robot+"))"))
 dx_robot =  TrajectoryVector(tdomain, TFunction("("+dx1_robot+";"+dx2_robot+";("+ddx2_robot+"*"+dx1_robot+"-"+ddx1_robot+"*"+dx2_robot+")/("+dx1_robot+"^2 + "+dx2_robot+"^2))"))
 ddx_robot =  TrajectoryVector(tdomain, TFunction("("+ddx1_robot+";"+ddx2_robot+")"))
+
+#with uncertitude
+v_robot= TubeVector(dx_robot,dt)
+v_robot.inflate(0.01)#add incertitude to speed
+x = TubeVector(tdomain,dt,3) #uncertain robot's pose
+x0 = x_truth(tdomain.lb()) #initial pose is known
+x.set(x0, tdomain.lb())
+ctc.deriv.contract(x, v_robot)
+
 #create the sensor's contour gamma
 #v is a vector with the speed on each of the four parts that are concatenated to create the sensor's contour
-gamma,v = ContourTraj(x_truth,dx_robot,ddx_robot,dt,L) 
+gamma,v = ContourTraj(x_truth,dx_robot,dt,L) 
 
 ##################### separate gamma into gamma + and gamma - #####################
 gamma_plus,v_plus,yt_right,yt_left = GammaPlus(dt,x_truth,dx_robot,ddx_robot,L)
@@ -100,6 +111,7 @@ beginDrawing()
 fig_map = VIBesFigMap("Map")
 fig_map.set_properties(100, 100, 800, 800)
 fig_map.axis_limits(world[0].lb(),world[0].ub(),world[1].lb(),world[1].ub())
+fig_map.add_tube(x, "[x]", 0, 1)
 fig_map.add_trajectory(x_truth, "x", 0, 1,"red")
 fig_map.add_trajectory(gamma, "blue", 0, 1)
 fig_map.add_trajectory(gamma_plus, "green", 0, 1)
