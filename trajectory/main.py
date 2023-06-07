@@ -77,7 +77,7 @@ dx_robot =  TrajectoryVector(tdomain, TFunction("("+dx1_robot+";"+dx2_robot+";("
 ddx_robot =  TrajectoryVector(tdomain, TFunction("("+ddx1_robot+";"+ddx2_robot+")"))
 #create the sensor's contour gamma
 #v is a vector with the speed on each of the four parts that are concatenated to create the sensor's contour
-gamma,v = ContourTraj(x_truth,dx_robot,dt,L) 
+gamma,v = ContourTraj(x_truth,dx_robot,ddx_robot,dt,L) 
 
 ##################### separate gamma into gamma + and gamma - #####################
 gamma_plus,v_plus,yt_right,yt_left = GammaPlus(dt,x_truth,dx_robot,ddx_robot,L)
