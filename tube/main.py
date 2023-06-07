@@ -80,7 +80,7 @@ ddx_robot =  TrajectoryVector(tdomain, TFunction("("+ddx1_robot+";"+ddx2_robot+"
 
 #with incertitude
 a_robot = TubeVector(ddx_robot,dt)#uncertain robot's acceleration
-a_robot.inflate(0.005) #add incertitude to acceleration
+a_robot.inflate(0.001) #add incertitude to acceleration
 v_robot = TubeVector(tdomain,dt,2) #uncertain robot's speed
 v0 = dx_robot(tdomain.lb()) #initial speed is known
 v_robot.set(v0, tdomain.lb())
@@ -92,7 +92,6 @@ ctc.deriv.contract(x, v_robot)
 
 #create the sensor's contour gamma
 #v is a vector with the speed on each of the four parts that are concatenated to create the sensor's contour
-# gamma,v = ContourTube(x_truth,dx_robot,ddx_robot,dt,L) 
 gamma,v = ContourTube(x,v_robot,a_robot,dt,L) 
 
 # ##################### separate gamma into gamma + and gamma - #####################
@@ -114,6 +113,7 @@ gamma,v = ContourTube(x,v_robot,a_robot,dt,L)
 # ##################### Graphics with Vibes #####################
 beginDrawing()
 fig_map = VIBesFigMap("Map")
+# fig_map.smooth_tube_drawing(True)
 fig_map.set_properties(100, 100, 800, 800)
 fig_map.axis_limits(world[0].lb(),world[0].ub(),world[1].lb(),world[1].ub())
 fig_map.add_tube(x, "[x]", 0, 1)

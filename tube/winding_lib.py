@@ -17,7 +17,7 @@ def ConcatenateTubes(x,dt):
     for i in range(len(x)):
         total_time += x[i].tdomain().diam()
         # print("total_time = ",total_time)
-    total_time += (len(x)-1)*dt
+    # total_time += (len(x)-1)*dt
     res = TubeVector(Interval(x[0].tdomain().lb(),x[0].tdomain().lb()+total_time),dt,2)
     # print(res)
     cmt_shift = 0
@@ -26,23 +26,16 @@ def ConcatenateTubes(x,dt):
         t = x[0][0].slice(i).tdomain()
         res[0].set(x[0][0](t),t)
         res[1].set(x[0][1](t),t)
-    time = Interval(res.tdomain().lb())
+    last_t = Interval(x[0].tdomain().lb())
     for idx in range(len(x)):
         if(idx > 0):
             x[idx].shift_tdomain(cmt_shift)
-        for i in range(x[idx][0].nb_slices()):
+        for i in np.arange(1,x[idx][0].nb_slices()):
             t = x[idx][0].slice(i).tdomain()
-            res[0].set(x[idx][0](t),t)
-            res[1].set(x[idx][1](t),t)
-        cmt_shift += x[idx].tdomain().diam() + dt
-
-        # # print("i =",i)
-        # x[i].shift_tdomain(cmt_shift)
-        # # print("end shift")
-        # res[0].set(x[i][0],x[i][0].tdomain())
-        # res[1].set(x[i][1],x[i][1].tdomain())
-        # # res[1] &= x[i][1]
-        # cmt_shift += x[i].tdomain().diam()
+            res[0].set(x[idx][0](t)|x[idx][0](last_t),t|last_t)
+            res[1].set(x[idx][1](t)|x[idx][1](last_t),t|last_t)
+            last_t = t
+        cmt_shift += x[idx].tdomain().diam()
 
     return res
 
@@ -137,9 +130,9 @@ def ContourTube(x_robot,dx_robot,ddx_robot,dt,L):
 
     x_left = InverseTube(x_left,tdomain,dt)
     
-    pt_1 = ConcatenateTubes([x_right,x_rl],dt)
-    pt_2 = ConcatenateTubes([x_left,x_lr],dt)
-    return ConcatenateTubes([pt_1],dt),v
+    # pt_1 = ConcatenateTubes([x_right,x_rl],dt)
+    # pt_2 = ConcatenateTubes([x_left,x_lr],dt)
+    return ConcatenateTubes([x_right,x_rl,x_left,x_lr],dt),v
 
     # u_real = TubeVector(tdomain, dt, 2)
     # u_real[0] = dx_robot[0]/sqrt((dx_robot[0]*dx_robot[0]) + (dx_robot[1]*dx_robot[1]))
