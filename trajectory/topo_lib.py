@@ -1,13 +1,9 @@
-# from pyibex import *
-# from pyibex.image import CtcRaster
 from codac import *
 from codac.unsupported import *
 import numpy as np
 from math import ceil,floor
 import cv2
 import matplotlib.pyplot as plt
-
-
 
 class Graph:
     def __init__(self,inter_list,tdomain,d_list,back_timer,back_timel):
@@ -33,8 +29,6 @@ class Graph:
         for v in self._V:
             V_dict[v._t_i.lb()] = v
             V_dict[v._t_f.lb()] = v
-            # V_dict[v._tdomain.lb()] = v
-            # V_dict[v._tdomain.ub()] = v
 
         V_keys = list(V_dict.keys())
         V_keys.sort()
@@ -49,35 +43,21 @@ class Graph:
             else:
                 t_i = 0
                 t_f = 0
-                # if(V_keys[i] == V_dict[V_keys[i]]._t_i.lb()):
+            
                 t_i = V_keys[i]
                 if(V_dict[V_keys[i+1]]._t_i.lb() == V_keys[i+1]):
                     t_f = V_dict[V_keys[i+1]]._t_i.ub()
                 else:
                     t_f = V_dict[V_keys[i+1]]._t_f.ub()
-                # # if(not((V_dict[V_keys[i]]._t_f&Interval(V_keys[i])).is_empty())):
-                # if(V_keys[i] == V_dict[V_keys[i]]._t_f.ub()):
-                #     t_i = V_dict[V_keys[i]]._t_f.lb()
-                # else:
-                #     t_i = V_dict[V_keys[i]]._t_i.lb()
-                # # if(not((V_dict[V_keys[i+1]]._t_f&Interval(V_keys[i+1])).is_empty())):
-                # if(V_keys[i+1] == V_dict[V_keys[i+1]]._t_f.ub()):
-                #     t_f = V_dict[V_keys[i+1]]._t_f.ub()
-                # else:
-                #     t_f = V_dict[V_keys[i+1]]._t_i.ub()
+               
                 t = [Interval(t_i,t_f)]
                 vf = V_dict[V_keys[i+1]]
 
             dir = vi._d_i[0]*vi._d_f[1] - vi._d_f[0]*vi._d_i[1]
-            # print("t  = ",t)
-            # print("vi._d_i = ",vi._d_i)
-            # print("vi._d_f = ",vi._d_f)
-            # print("dir before = ",dir)
-
+        
             if(not((vi._t_f&Interval(t[0].lb())).is_empty())):
                 dir = -dir
 
-            # print("dir = ",dir)
             new_e = self.AddEdge(t,vi,vf,dir)
 
 
@@ -98,9 +78,7 @@ class Graph:
             new_e._u = -1
         elif(dir.ub() < 0):
             new_e._u = 1
-        # print("new_e._u = ",new_e._u)
-        # a = input('').split(" ")[0]
-        # print(a)
+       
         self._E.append(new_e)
         self._e_count += 1
         return new_e
@@ -109,8 +87,7 @@ class Graph:
         min_val = 0
         for i in range(self._n_e):
             e = self._E[i]
-            # print("e._T = ",e._T)
-            # print("e._u = ",e._u)
+           
             if(i == 0):
                 if(e._u == 1):
                     e._l_v = 1
@@ -126,13 +103,6 @@ class Graph:
                     min_val = e._l_v
                 if(e._r_v < min_val):
                     min_val = e._r_v
-
-            # print("e._l_v  = ",e._l_v )
-            # print("e._r_v = ",e._r_v)
-            # a = input('').split(" ")[0]
-            # print(a)
-
-        # print("e.min_val  = ",min_val )
 
         for e in self._E:
             if(min_val < 0):
@@ -199,12 +169,8 @@ class Graph:
 
             if(self._E[edge_in[len(edge_in)-1][0]]._v_i == self._E[edge_in[len(edge_in)-1][len(edge_in[len(edge_in)-1]) - 1]]._v_f) :
                 end_cycle = 1
-                # print("in = ",edge_in[len(edge_in)-1])
-                # print("out = ",edge_out)
-                # print("end cycle")
                 edge_in.append([])
-                # plt.imshow(img_aux)
-                # plt.show()
+               
                 imgs.append(img_aux)
                 img_aux = np.zeros((npx, npy), dtype=np.int64)
 
@@ -228,8 +194,7 @@ class Graph:
                         nxt_idx += 1
 
             else:
-                # print("in = ",edge_in[len(edge_in)-1])
-                # print("out = ",edge_out)
+               
                 l_v_f = self._V[e._v_f._nb]._e_i
                 for et in l_v_f:
                     if(et._l_v == wn):
@@ -240,10 +205,7 @@ class Graph:
                             total_len += 1
 
         images_out = []
-        # print("len(imgs)  = ", len(imgs))
         for img_aux in imgs:
-            # plt.imshow(img_aux)
-            # plt.show()
             img_count += img_aux
             img_count[img_count > 0] = 1
             contours, hyera = cv2.findContours(np.ascontiguousarray(img_aux.copy(), dtype=np.uint8).astype(np.uint8), cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
@@ -255,59 +217,25 @@ class Graph:
             for cntr in contours:
                 if(hyera[0][idx][3] == -1):
                     area = cv2.contourArea(cntr)
-                    # img_out_i = np.ascontiguousarray(img_aux.copy(), dtype=np.uint8)
-                    # cv2.drawContours(img_out_i, [cntr], contourIdx=0, color=(255,255,255),thickness=-1)
-                    # plt.imshow(img_out_i)
-                    # plt.show()
                     if(area > max_area):
                         c = cntr
                         max_area = area
                 idx +=1
-                # M = cv2.moments(cntr)
-                # # cx = int(M["m10"] / M["m00"])
-                # # cy = int(M["m01"] / M["m00"])
-                # cntrs_info.append((index,area))
-                # index = index + 1
             img_out_i = np.ascontiguousarray(img_aux.copy(), dtype=np.uint8)
             if(max_area > 0):
                 cv2.drawContours(img_out_i,[c],contourIdx=0, color=(255,255,255),thickness=-1)
             images_out.append(img_out_i)
-            # else:
-            #     images_out.append(img_out_i)
-            # plt.imshow(img_out_i)
-            # plt.show()
-            # for idx in np.arange(0,len(contours),1):
-            # for idx in np.arange(0,1,1):
-            #     # c = contours[-1]
-            #     c = max(contours, key = cv2.contourArea)
-            #     # if(hyera[0][idx][3] == -1):
-            #     img_out_i = np.ascontiguousarray(img_aux.copy(), dtype=np.uint8)
-            #     cv2.drawContours(img_out_i, [c], contourIdx=0, color=(255,255,255),thickness=-1)
-            #     images_out.append(img_out_i)
-            #         # plt.imshow(img_out_i)
-            #         # plt.show()
 
         img_out = np.ascontiguousarray(np.zeros((npx, npy), dtype=np.int64), dtype=np.uint8)
         for img in images_out:
-            # plt.imshow(img)
-            # plt.show()
             img[img > 0] = 1
             img_out += img
             img_out[(img_out%2) == 0] = 0
-            # plt.imshow(img_out)
-            # plt.show()
 
-        # img_out[(img_out%2) == 0] = 0
         img_in = np.ones((npx, npy), dtype=np.uint8) - img_out
         for img_aux in imgs:
             img_out[img_aux > 0 ] = 1
             img_in[img_aux > 0 ] = 1
-            # plt.imshow(img_aux)
-            # plt.show()
-        # plt.imshow(img_in)
-        # plt.show()
-        # plt.imshow(img_out)
-        # plt.show()
         img_out = img_out.cumsum(0).cumsum(1)
         img_in = img_in.cumsum(0).cumsum(1)
         ctcOut = CtcRaster(img_out, X[0].lb(), X[1].ub(), pixel_x, pixel_y)
@@ -412,9 +340,6 @@ class Graph:
 
                 last_t = t
 
-            # plt.imshow(img_aux)
-            # plt.show()
-    
             contours, hyera = cv2.findContours(np.ascontiguousarray(img_aux.copy(), dtype=np.uint8).astype(np.uint8), cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
             images_out = []
             for idx in np.arange(0,len(contours),1):
@@ -434,11 +359,6 @@ class Graph:
             img_out[img_aux > 0 ] = 1
             img_in[img_aux > 0 ] = 1
 
-            # plt.imshow(img_in)
-            # plt.show()
-            # plt.imshow(img_out)
-            # plt.show()
-
             img_out = img_out.cumsum(0).cumsum(1)
             img_in = img_in.cumsum(0).cumsum(1)
             ctcOut = CtcRaster(img_out, X[0].lb(), X[1].ub(), pixel_x, pixel_y)
@@ -449,8 +369,6 @@ class Graph:
 
 
     def CreateContourSep(self,X,dt,eps,img_aux):
-        # plt.imshow(img_aux)
-        # plt.show()
         pixel_x = eps
         pixel_y = -eps
         npx = int((X[0].ub() - X[0].lb())/abs(pixel_x))
@@ -460,13 +378,6 @@ class Graph:
 
         img_out = img_aux.copy()
         img_in = np.ones((npx, npy), dtype=np.uint8) - img_out
-        # img_out[img_aux > 0 ] = 1
-        # img_in[img_aux > 0 ] = 1
-
-        # plt.imshow(img_out)
-        # plt.show()
-        # plt.imshow(img_in)
-        # plt.show()
 
         img_out = img_out.cumsum(0).cumsum(1)
         img_in = img_in.cumsum(0).cumsum(1)
