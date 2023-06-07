@@ -66,7 +66,7 @@ L = 3.6
 #Area to classify
 world = IntervalVector([[-20,20],[-18,12]])
 #size of the robot for visualization
-robot_size = 1.
+robot_size = 2.
 
 ##################### create trajectory from equations (parametric equations can be replaced by real data) #####################
 # x_truth is the robot's pose (position and orientation)
