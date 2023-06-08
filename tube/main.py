@@ -51,22 +51,22 @@ robot_size = 2.
 
 ##################### Example with Sweep Back #####################
 # Equations for creating trajectory
-# x1_robot = "(8*cos( t))"
-# dx1_robot = "(-8*sin( t))"
-# ddx1_robot = "(-8*cos( t))"
-# x2_robot = "(5*sin(2* t) - t)"
-# dx2_robot = "(10*cos(2* t) - 1)"
-# ddx2_robot = "(-20*sin(2* t))"
-# #mission time interval
-# tdomain = Interval(0,2*pi)
-# #time step
-# dt=0.01
-# #Range of visibility on each side
-# L = 3.6
-# #Area to classify
-# world = IntervalVector([[-20,20],[-18,12]])
-# #size of the robot for visualization
-# robot_size = 2.
+x1_robot = "(8*cos( t))"
+dx1_robot = "(-8*sin( t))"
+ddx1_robot = "(-8*cos( t))"
+x2_robot = "(5*sin(2* t) - t)"
+dx2_robot = "(10*cos(2* t) - 1)"
+ddx2_robot = "(-20*sin(2* t))"
+#mission time interval
+tdomain = Interval(0,2*pi)
+#time step
+dt=0.01
+#Range of visibility on each side
+L = 3.6
+#Area to classify
+world = IntervalVector([[-20,20],[-18,12]])
+#size of the robot for visualization
+robot_size = 2.
 
 ##################### create tubes from equations (parametric equations can be replaced by real data) #####################
 
@@ -80,7 +80,7 @@ ddx_robot =  TrajectoryVector(tdomain, TFunction("("+ddx1_robot+";"+ddx2_robot+"
 
 #with incertitude
 a_robot = TubeVector(ddx_robot,dt)#uncertain robot's acceleration
-a_robot.inflate(0.001) #add incertitude to acceleration
+a_robot.inflate(0.0000005) #add incertitude to acceleration
 v_robot = TubeVector(tdomain,dt,2) #uncertain robot's speed
 v0 = dx_robot(tdomain.lb()) #initial speed is known
 v_robot.set(v0, tdomain.lb())
@@ -95,7 +95,9 @@ ctc.deriv.contract(x, v_robot)
 gamma,v = ContourTube(x,v_robot,a_robot,dt,L) 
 
 # ##################### separate gamma into gamma + and gamma - #####################
-# gamma_plus,v_plus,yt_right,yt_left = GammaPlus(dt,x_truth,dx_robot,ddx_robot,L)
+# gamma_plus,v_plus,yt_right,yt_left = GammaPlusTube(dt,x,v_robot,a_robot,L)
+# print('gamma_plus = ',gamma_plus)
+GammaPlusTube(dt,x,v_robot,a_robot,L)
 
 # ##################### find self-intersections in gamma_plus #####################
 # tplane = TPlane(gamma_plus.tdomain())

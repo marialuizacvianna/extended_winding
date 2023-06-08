@@ -30,11 +30,21 @@ def ConcatenateTubes(x,dt):
     for idx in range(len(x)):
         if(idx > 0):
             x[idx].shift_tdomain(cmt_shift)
-        for i in np.arange(1,x[idx][0].nb_slices()):
+        for i in np.arange(0,x[idx][0].nb_slices()):
             t = x[idx][0].slice(i).tdomain()
+            # if(i == 0):
+            #     print("i == 0")
+            #     print("t ==",t)
+            #     print("x[idx](t) ==",x[idx](t))
+            # if(i == x[idx][0].nb_slices() -1):
+            #     print("i last")
+            #     print("t ==",t)
+            #     print("x[idx](t) ==",x[idx](t))
+            # t_int =Interval(last_t.ub(),t.ub())
             res[0].set(x[idx][0](t)|x[idx][0](last_t),t|last_t)
             res[1].set(x[idx][1](t)|x[idx][1](last_t),t|last_t)
             last_t = t
+  
         cmt_shift += x[idx].tdomain().diam()
 
     return res
@@ -127,12 +137,12 @@ def ContourTube(x_robot,dx_robot,ddx_robot,dt,L):
 
     x_rl = TubeVector(x_rl_lb,x_rl_ub,dt)
     x_lr = TubeVector(x_lr_lb,x_lr_ub,dt)
-
     x_left = InverseTube(x_left,tdomain,dt)
     
     # pt_1 = ConcatenateTubes([x_right,x_rl],dt)
     # pt_2 = ConcatenateTubes([x_left,x_lr],dt)
     return ConcatenateTubes([x_right,x_rl,x_left,x_lr],dt),v
+    # return ConcatenateTubes([x_right,x_rl],dt),v
 
     # u_real = TubeVector(tdomain, dt, 2)
     # u_real[0] = dx_robot[0]/sqrt((dx_robot[0]*dx_robot[0]) + (dx_robot[1]*dx_robot[1]))
@@ -367,28 +377,24 @@ def ContourRL(x_right,dx_right,x_left,dx_left,dt):
 
     return ConcatenateTraj([x_right,x_rl,InverseTraj(x_left,dt),x_lr],dt),v
 
-def GammaPlus(dt,x_truth,dx_robot,ddx_robot,L):
+def GammaPlusTube(dt,x_truth,dx_robot,ddx_robot,L):
     tdomain = x_truth.tdomain()
-    sin_theta = dx_robot[1].sample(dt)/sqrt(dx_robot[0].sample(dt)*dx_robot[0].sample(dt) + dx_robot[1].sample(dt)*dx_robot[1].sample(dt))
-    cos_theta = dx_robot[0].sample(dt)/sqrt(dx_robot[0].sample(dt)*dx_robot[0].sample(dt) + dx_robot[1].sample(dt)*dx_robot[1].sample(dt))
+    sin_theta = dx_robot[1]/sqrt(dx_robot[0]*dx_robot[0] + dx_robot[1]*dx_robot[1])
+    cos_theta = dx_robot[0]/sqrt(dx_robot[0]*dx_robot[0] + dx_robot[1]*dx_robot[1])
     hip = sqrt(dx_robot[0]*dx_robot[0] + dx_robot[1]*dx_robot[1])
     dhip = (dx_robot[0]*ddx_robot[0] + dx_robot[1]*ddx_robot[1])/hip
-
     dsin_theta = (ddx_robot[1]*hip - dhip*dx_robot[1])/(hip*hip)
     dcos_theta = (ddx_robot[0]*hip - dhip*dx_robot[0])/(hip*hip)
-
     lr = (dx_robot[1]*sin_theta + dx_robot[0]*cos_theta)/(sin_theta*dcos_theta - cos_theta*dsin_theta)
     ll = (dx_robot[1]*sin_theta + dx_robot[0]*cos_theta)/(-sin_theta*dcos_theta + cos_theta*dsin_theta)
     ll_dict = dict()
     lr_dict = dict()
-
     y_mosaic = []
     yt_right = []
     yt_left = []
     new_back_l = 0
     new_back_r = 0
     t = tdomain.lb() - dt
-
     while t < tdomain.ub():
         t += dt
         if(t < tdomain.lb()):
@@ -396,36 +402,30 @@ def GammaPlus(dt,x_truth,dx_robot,ddx_robot,L):
         if(t > tdomain.ub()):
             t = tdomain.ub()
         
-        if(ll(t) > L):
+        if(ll(t).ub() > L):
             ll_dict[t] = L
             new_back_l = 0
-        elif(ll(t) < 0):
-            ll_dict[t] =L
-            new_back_l = 0
         else:
-            ll_dict[t] = ll(t)
+            ll_dict[t] = ll(t).lb()
             if(not new_back_l):
                 new_back_l = 1
                 yt_left.append(Interval(t).inflate(dt))
             else:
                 yt_left[-1] = yt_left[-1] | Interval(t).inflate(dt)
         
-        if(lr(t) > L):
-            lr_dict[t] = L
-            new_back_r = 0
-        elif(lr(t) < 0):
+        if(lr(t).ub() > L):
             lr_dict[t] = L
             new_back_r = 0
         else:
-            lr_dict[t] = lr(t)
+            lr_dict[t] = lr(t).lb()
             if(not new_back_r):
                 new_back_r = 1
                 yt_right.append(Interval(t).inflate(dt))
             else:
                 yt_right[-1] = yt_right[-1] | Interval(t).inflate(dt)
 
-    lr = Trajectory(lr_dict)
-    ll = Trajectory(ll_dict)
+    lr = Trajectory(lr_dict),dt
+    ll = Trajectory(ll_dict),dt
 
     tan_traj_r = TrajectoryVector(2)
     dtan_traj_r = TrajectoryVector(2)
@@ -462,50 +462,50 @@ def GammaPlus(dt,x_truth,dx_robot,ddx_robot,L):
     data_vy_r.append(data_vy_r[-1])
     data_vx_l.append(data_vx_l[-1])
     data_vy_l.append(data_vy_l[-1])
-    dtan_traj_r[0] = Trajectory(t, data_vx_r)
-    dtan_traj_r[1] = Trajectory(t, data_vy_r)
-    dtan_traj_l[0] = Trajectory(t, data_vx_l)
-    dtan_traj_l[1] = Trajectory(t, data_vy_l)
+    dtan_traj_r[0] = Tube(Trajectory(t, data_vx_r),dt)
+    dtan_traj_r[1] = Tube(Trajectory(t, data_vy_r),dt)
+    dtan_traj_l[0] = Tube(Trajectory(t, data_vx_l),dt)
+    dtan_traj_l[1] = Tube(Trajectory(t, data_vy_l),dt)
 
 
-    gamma_after,v_after = ContourRL(tan_traj_r,dtan_traj_r,tan_traj_l,dtan_traj_l,dt)
+    # gamma_after,v_after = ContourRL(tan_traj_r,dtan_traj_r,tan_traj_l,dtan_traj_l,dt)
 
-    return gamma_after,v_after,yt_right,yt_left
+    # return gamma_after,v_after,yt_right,yt_left
 
 
 
-def TangentLoop(v,tdomain,loops):
-    d_list_i = []
-    d_list_f = []
+# def TangentLoop(v,tdomain,loops):
+#     d_list_i = []
+#     d_list_f = []
 
-    for l in loops:
-        if(l[0].ub() <= tdomain.ub()): #right
-            v_begin_x = v[0](l[0])[0]
-            v_begin_y = v[0](l[0])[1]
-        elif(l[0].ub() <= tdomain.ub() + tdomain.diam()): #rl
-            v_begin_x = v[1](l[0]-tdomain.diam())[0]
-            v_begin_y = v[1](l[0]-tdomain.diam())[1]
-        elif(l[0].ub() <= tdomain.ub() + 2*tdomain.diam()): #left
-            v_begin_x = -v[2]((l[0]-2*tdomain.diam()))[0]
-            v_begin_y = -v[2]((l[0]-2*tdomain.diam()))[1]
-        else: #lr
-            v_begin_x = v[3](l[0]-3*tdomain.diam())[0]
-            v_begin_y = v[3](l[0]-3*tdomain.diam())[1]
+#     for l in loops:
+#         if(l[0].ub() <= tdomain.ub()): #right
+#             v_begin_x = v[0](l[0])[0]
+#             v_begin_y = v[0](l[0])[1]
+#         elif(l[0].ub() <= tdomain.ub() + tdomain.diam()): #rl
+#             v_begin_x = v[1](l[0]-tdomain.diam())[0]
+#             v_begin_y = v[1](l[0]-tdomain.diam())[1]
+#         elif(l[0].ub() <= tdomain.ub() + 2*tdomain.diam()): #left
+#             v_begin_x = -v[2]((l[0]-2*tdomain.diam()))[0]
+#             v_begin_y = -v[2]((l[0]-2*tdomain.diam()))[1]
+#         else: #lr
+#             v_begin_x = v[3](l[0]-3*tdomain.diam())[0]
+#             v_begin_y = v[3](l[0]-3*tdomain.diam())[1]
 
-        if(l[1].ub() <= tdomain.ub()): #right
-            v_end_x = v[0](l[1])[0]
-            v_end_y = v[0](l[1])[1]
-        elif(l[1].ub() <= tdomain.ub() + tdomain.diam()): #rl
-            v_end_x = v[1](l[1]-tdomain.diam())[0]
-            v_end_y = v[1](l[1]-tdomain.diam())[1]
-        elif(l[1].ub() <= tdomain.ub() + 2*tdomain.diam()): #left
-            v_end_x = -v[2]((l[1]-2*tdomain.diam()))[0]
-            v_end_y = -v[2]((l[1]-2*tdomain.diam()))[1]
-        else: #lr
-            v_end_x = v[3](l[1]-3*tdomain.diam())[0]
-            v_end_y = v[3](l[1]-3*tdomain.diam())[1]
+#         if(l[1].ub() <= tdomain.ub()): #right
+#             v_end_x = v[0](l[1])[0]
+#             v_end_y = v[0](l[1])[1]
+#         elif(l[1].ub() <= tdomain.ub() + tdomain.diam()): #rl
+#             v_end_x = v[1](l[1]-tdomain.diam())[0]
+#             v_end_y = v[1](l[1]-tdomain.diam())[1]
+#         elif(l[1].ub() <= tdomain.ub() + 2*tdomain.diam()): #left
+#             v_end_x = -v[2]((l[1]-2*tdomain.diam()))[0]
+#             v_end_y = -v[2]((l[1]-2*tdomain.diam()))[1]
+#         else: #lr
+#             v_end_x = v[3](l[1]-3*tdomain.diam())[0]
+#             v_end_y = v[3](l[1]-3*tdomain.diam())[1]
 
-        d_list_i.append([v_begin_x,v_begin_y])
-        d_list_f.append([v_end_x,v_end_y])
+#         d_list_i.append([v_begin_x,v_begin_y])
+#         d_list_f.append([v_end_x,v_end_y])
     
-    return d_list_i,d_list_f
+#     return d_list_i,d_list_f
