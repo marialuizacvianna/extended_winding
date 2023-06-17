@@ -20,18 +20,25 @@ def ConcatenateTubes(x,dt):
     # total_time += (len(x)-1)*dt
     res = TubeVector(Interval(x[0].tdomain().lb(),x[0].tdomain().lb()+total_time),dt,2)
     # print(res)
-    cmt_shift = 0
-
+    domain = x[0][0].slice(0).tdomain()
     for i in range(x[0][0].nb_slices()):
         t = x[0][0].slice(i).tdomain()
+        domain |= t
         res[0].set(x[0][0](t),t)
         res[1].set(x[0][1](t),t)
-    last_t = Interval(x[0].tdomain().lb())
-    for idx in range(len(x)):
-        if(idx > 0):
-            x[idx].shift_tdomain(cmt_shift)
+        # print("res[0](t) = ",res[0](t))
+        # print("res[1](t) = ",res[1](t))
+    # print("res(domain) = ",res(domain))
+    last_t = Interval(x[0].tdomain().ub())
+    cmt_shift = x[0].tdomain().diam()
+    # print('domain = ',domain)
+    for idx in range(1,len(x)):
+        # if(idx > 0):
+        x[idx].shift_tdomain(cmt_shift)
+        # print(x[idx].tdomain())
         for i in np.arange(0,x[idx][0].nb_slices()):
             t = x[idx][0].slice(i).tdomain()
+            domain |= t
             # if(i == 0):
             #     print("i == 0")
             #     print("t ==",t)
@@ -41,12 +48,20 @@ def ConcatenateTubes(x,dt):
             #     print("t ==",t)
             #     print("x[idx](t) ==",x[idx](t))
             # t_int =Interval(last_t.ub(),t.ub())
-            res[0].set(x[idx][0](t)|x[idx][0](last_t),t|last_t)
-            res[1].set(x[idx][1](t)|x[idx][1](last_t),t|last_t)
+            # res[0].set(x[idx][0](t)|x[idx][0](last_t),t|last_t)
+            # res[1].set(x[idx][1](t)|x[idx][1](last_t),t|last_t)
+            res[0].set(x[idx][0](t),t)
+            res[1].set(x[idx][1](t),t)
+            # if(idx == 2):
+                # print("t|last_t = ",t)
+            # print("res[0](t|last_t) = ",res[0](t|last_t))
+            # print("res[1](t|last_t) = ",res[1](t|last_t))
             last_t = t
   
         cmt_shift += x[idx].tdomain().diam()
-
+    #     print("res(domain) = ",res(domain))
+    # print("res = ",res)
+    # print("domain = ",domain)
     return res
 
 def InverseTube(x,tdomain,dt):
@@ -142,7 +157,7 @@ def ContourTube(x_robot,dx_robot,ddx_robot,dt,L):
     # pt_1 = ConcatenateTubes([x_right,x_rl],dt)
     # pt_2 = ConcatenateTubes([x_left,x_lr],dt)
     return ConcatenateTubes([x_right,x_rl,x_left,x_lr],dt),v
-    # return ConcatenateTubes([x_right,x_rl],dt),v
+    # return ConcatenateTubes([x_right,x_rl,x_left],dt),v
 
     # u_real = TubeVector(tdomain, dt, 2)
     # u_real[0] = dx_robot[0]/sqrt((dx_robot[0]*dx_robot[0]) + (dx_robot[1]*dx_robot[1]))
@@ -474,38 +489,38 @@ def GammaPlusTube(dt,x_truth,dx_robot,ddx_robot,L):
 
 
 
-# def TangentLoop(v,tdomain,loops):
-#     d_list_i = []
-#     d_list_f = []
+def TangentLoop(v,tdomain,loops):
+    d_list_i = []
+    d_list_f = []
 
-#     for l in loops:
-#         if(l[0].ub() <= tdomain.ub()): #right
-#             v_begin_x = v[0](l[0])[0]
-#             v_begin_y = v[0](l[0])[1]
-#         elif(l[0].ub() <= tdomain.ub() + tdomain.diam()): #rl
-#             v_begin_x = v[1](l[0]-tdomain.diam())[0]
-#             v_begin_y = v[1](l[0]-tdomain.diam())[1]
-#         elif(l[0].ub() <= tdomain.ub() + 2*tdomain.diam()): #left
-#             v_begin_x = -v[2]((l[0]-2*tdomain.diam()))[0]
-#             v_begin_y = -v[2]((l[0]-2*tdomain.diam()))[1]
-#         else: #lr
-#             v_begin_x = v[3](l[0]-3*tdomain.diam())[0]
-#             v_begin_y = v[3](l[0]-3*tdomain.diam())[1]
+    for l in loops:
+        if(l[0].ub() <= tdomain.ub()): #right
+            v_begin_x = v[0](l[0])[0]
+            v_begin_y = v[0](l[0])[1]
+        elif(l[0].ub() <= tdomain.ub() + tdomain.diam()): #rl
+            v_begin_x = v[1](l[0]-tdomain.diam())[0]
+            v_begin_y = v[1](l[0]-tdomain.diam())[1]
+        elif(l[0].ub() <= tdomain.ub() + 2*tdomain.diam()): #left
+            v_begin_x = -v[2]((l[0]-2*tdomain.diam()))[0]
+            v_begin_y = -v[2]((l[0]-2*tdomain.diam()))[1]
+        else: #lr
+            v_begin_x = v[3](l[0]-3*tdomain.diam())[0]
+            v_begin_y = v[3](l[0]-3*tdomain.diam())[1]
 
-#         if(l[1].ub() <= tdomain.ub()): #right
-#             v_end_x = v[0](l[1])[0]
-#             v_end_y = v[0](l[1])[1]
-#         elif(l[1].ub() <= tdomain.ub() + tdomain.diam()): #rl
-#             v_end_x = v[1](l[1]-tdomain.diam())[0]
-#             v_end_y = v[1](l[1]-tdomain.diam())[1]
-#         elif(l[1].ub() <= tdomain.ub() + 2*tdomain.diam()): #left
-#             v_end_x = -v[2]((l[1]-2*tdomain.diam()))[0]
-#             v_end_y = -v[2]((l[1]-2*tdomain.diam()))[1]
-#         else: #lr
-#             v_end_x = v[3](l[1]-3*tdomain.diam())[0]
-#             v_end_y = v[3](l[1]-3*tdomain.diam())[1]
+        if(l[1].ub() <= tdomain.ub()): #right
+            v_end_x = v[0](l[1])[0]
+            v_end_y = v[0](l[1])[1]
+        elif(l[1].ub() <= tdomain.ub() + tdomain.diam()): #rl
+            v_end_x = v[1](l[1]-tdomain.diam())[0]
+            v_end_y = v[1](l[1]-tdomain.diam())[1]
+        elif(l[1].ub() <= tdomain.ub() + 2*tdomain.diam()): #left
+            v_end_x = -v[2]((l[1]-2*tdomain.diam()))[0]
+            v_end_y = -v[2]((l[1]-2*tdomain.diam()))[1]
+        else: #lr
+            v_end_x = v[3](l[1]-3*tdomain.diam())[0]
+            v_end_y = v[3](l[1]-3*tdomain.diam())[1]
 
-#         d_list_i.append([v_begin_x,v_begin_y])
-#         d_list_f.append([v_end_x,v_end_y])
+        d_list_i.append([v_begin_x,v_begin_y])
+        d_list_f.append([v_end_x,v_end_y])
     
-#     return d_list_i,d_list_f
+    return d_list_i,d_list_f
