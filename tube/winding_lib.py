@@ -118,7 +118,7 @@ def ContourTube(x_robot,dx_robot,ddx_robot,dt,L):
     d_xrl = TubeVector(tdomain, dt, 2)
     d_xrl[0] &= Interval(alpha0)
     d_xrl[1] &= Interval(alpha1)
-
+    v[1] = d_xrl
     x_rl_ub = TrajectoryVector(2)
     x_rl_ub = TrajectoryVector(tdomain, TFunction("((t - "+str(tdomain.lb())+")*"+str(alpha0)+"+"+str(beta0)+";(t - "+str(tdomain.lb())+")*"+str(alpha1)+"+"+str(beta1)+")"))
 
@@ -138,7 +138,7 @@ def ContourTube(x_robot,dx_robot,ddx_robot,dt,L):
     d_xlr = TubeVector(tdomain, dt, 2)
     d_xlr[0] &= Interval(alpha0)
     d_xlr[1] &= Interval(alpha1)
-
+    v[3] = d_xlr
     x_lr_ub = TrajectoryVector(2)
     x_lr_ub = TrajectoryVector(tdomain, TFunction("((t - "+str(tdomain.lb())+")*"+str(alpha0)+"+"+str(beta0)+";(t - "+str(tdomain.lb())+")*"+str(alpha1)+"+"+str(beta1)+")"))
 

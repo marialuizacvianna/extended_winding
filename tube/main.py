@@ -7,6 +7,8 @@ from collections import deque
 from winding_lib import *
 from topo_lib import *
 
+Tube.enable_syntheses() # faster integral computations
+
 total_time_begin = datetime.datetime.now()
 
 #comment the the examples that should not been used below
@@ -32,22 +34,22 @@ robot_size = 2.
 
 ##################### Example 2 #####################
 # Equations for creating trajectory
-# x1_robot = "(5* t-5*sin(10* t))"
-# dx1_robot = "(5-50*cos(10* t))"
-# ddx1_robot = "(500*sin(10* t))"
-# x2_robot = "(2-3*cos(10* t))"
-# dx2_robot = "(30*sin(10* t))"
-# ddx2_robot = "(300*cos(10* t))"
-# #mission time interval
-# tdomain = Interval(-0.02,1.0)
-# #time step
-# dt=0.001
-# #Range of visibility on each side
-# L = 0.5
-# #Area to classify
-# world = IntervalVector([[-6,10],[-5,8]])
-# #size of the robot for visualization
-# robot_size = 1.
+x1_robot = "(5* t-5*sin(10* t))"
+dx1_robot = "(5-50*cos(10* t))"
+ddx1_robot = "(500*sin(10* t))"
+x2_robot = "(2-3*cos(10* t))"
+dx2_robot = "(30*sin(10* t))"
+ddx2_robot = "(300*cos(10* t))"
+#mission time interval
+tdomain = Interval(-0.02,1.0)
+#time step
+dt=0.001
+#Range of visibility on each side
+L = 0.5
+#Area to classify
+world = IntervalVector([[-6,10],[-5,8]])
+#size of the robot for visualization
+robot_size = 1.
 
 ##################### Example with Sweep Back #####################
 # Equations for creating trajectory
@@ -103,12 +105,13 @@ gamma,v = ContourTube(x,v_robot,a_robot,dt,L)
 # GammaPlusTube(dt,x,v_robot,a_robot,L)
 gamma_plus = TubeVector(gamma)
 v_plus = v.copy()
-# ##################### find self-intersections in gamma_plus #####################
+##################### find self-intersections in gamma_plus #####################
 tplane = TPlane(gamma_plus.tdomain())
-tplane.compute_detections(dt, gamma_plus)
+tplane.compute_detections(5*dt, gamma_plus)
 tplane.compute_proofs(gamma_plus)
 loops = tplane.proven_loops()
 
+print("v_plus = ",v_plus)
 # ##################### derivatives in self-intersections #####################
 d_list_i,d_list_f = TangentLoop(v_plus,tdomain,loops)
 
@@ -117,10 +120,11 @@ d_list_i,d_list_f = TangentLoop(v_plus,tdomain,loops)
 g = Graph(loops,gamma_plus.tdomain(),[d_list_i,d_list_f],[],[])
 g.UpdateEdges()
 
-# ##################### Graphics with Vibes #####################
+# # ##################### Graphics with Vibes #####################
 beginDrawing()
 fig_map = VIBesFigMap("Map")
 # fig_map.smooth_tube_drawing(True)
+fig_map.set_tube_max_disp_slices(10000)
 fig_map.set_properties(100, 100, 800, 800)
 fig_map.axis_limits(world[0].lb(),world[0].ub(),world[1].lb(),world[1].ub())
 # fig_map.add_tube(x, "[x]", 0, 1)
