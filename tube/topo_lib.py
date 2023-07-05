@@ -157,13 +157,10 @@ class Graph:
 
                     xi = gamma(Interval(last_t,t))[0]
                     yi = gamma(Interval(last_t,t))[1]
-                    # print("xi = ",xi)
-                    # print("yi = ",yi)
-                    # print("X = ",X)
+
                     x_pix = (xi - X[0].lb())/pixel_x
                     y_pix= (yi - X[1].ub())/pixel_y
-                    # print("x_pix = ",x_pix)
-                    # print("y_pix = ",y_pix)
+
                     for i in range(floor(x_pix.lb()),ceil(x_pix.ub())):
                         for j in range(floor(y_pix.lb()),ceil(y_pix.ub())):
                             img_aux[i,j] = 1
