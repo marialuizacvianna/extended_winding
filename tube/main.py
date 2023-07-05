@@ -11,7 +11,7 @@ Tube.enable_syntheses() # faster integral computations
 
 total_time_begin = datetime.datetime.now()
 
-#comment the the examples that should not been used below
+#comment the the examples that should not been used below:
 
 ##################### Example from the Article #####################
 # Equations for creating trajectory
@@ -34,45 +34,27 @@ robot_size = 2.
 
 ##################### Example 2 #####################
 # Equations for creating trajectory
-x1_robot = "(5* t-5*sin(10* t))"
-dx1_robot = "(5-50*cos(10* t))"
-ddx1_robot = "(500*sin(10* t))"
-x2_robot = "(2-3*cos(10* t))"
-dx2_robot = "(30*sin(10* t))"
-ddx2_robot = "(300*cos(10* t))"
-#mission time interval
-tdomain = Interval(-0.02,1.0)
-#time step
-dt=0.001
-#Range of visibility on each side
-L = 0.5
-#Area to classify
-world = IntervalVector([[-6,10],[-5,8]])
-#size of the robot for visualization
-robot_size = 1.
-
-##################### Example with Sweep Back #####################
-# Equations for creating trajectory
-# x1_robot = "(8*cos( t))"
-# dx1_robot = "(-8*sin( t))"
-# ddx1_robot = "(-8*cos( t))"
-# x2_robot = "(5*sin(2* t) - t)"
-# dx2_robot = "(10*cos(2* t) - 1)"
-# ddx2_robot = "(-20*sin(2* t))"
+# x1_robot = "(5* t-5*sin(10* t))"
+# dx1_robot = "(5-50*cos(10* t))"
+# ddx1_robot = "(500*sin(10* t))"
+# x2_robot = "(2-3*cos(10* t))"
+# dx2_robot = "(30*sin(10* t))"
+# ddx2_robot = "(300*cos(10* t))"
 # #mission time interval
-# tdomain = Interval(0,2*pi)
+# tdomain = Interval(-0.02,1.0)
 # #time step
-# dt=0.01
+# dt=0.001
 # #Range of visibility on each side
-# L = 3.6
+# L = 0.5
 # #Area to classify
-# world = IntervalVector([[-20,20],[-18,12]])
+# world = IntervalVector([[-6,10],[-5,8]])
 # #size of the robot for visualization
-# robot_size = 2.
+# robot_size = 1.
 
-##################### create tubes from equations (parametric equations can be replaced by real data) #####################
+######
+#create tubes from equations (parametric equations can be replaced by real data 
 
-#true unknown values
+# true unknown values
 # x_truth is the robot's pose (position and orientation)
 # dx_robot its velocity
 # ddx_robot its acceleration
@@ -80,68 +62,66 @@ x_truth =  TrajectoryVector(tdomain, TFunction("("+x1_robot+";"+x2_robot+")"))
 dx_robot =  TrajectoryVector(tdomain, TFunction("("+dx1_robot+";"+dx2_robot+")"))
 ddx_robot =  TrajectoryVector(tdomain, TFunction("("+ddx1_robot+";"+ddx2_robot+")"))
 
-#with incertitude
-a_robot = TubeVector(ddx_robot,dt)#uncertain robot's acceleration
-a_robot.inflate(0.000000001) #add incertitude to acceleration
-v_robot = TubeVector(dx_robot,dt)#uncertain robot's acceleration
-a_robot.inflate(0.0001) #add incertitude to speed
+#add incertitude
+a_robot = TubeVector(ddx_robot,dt) #uncertain robot's acceleration
+v_robot = TubeVector(dx_robot,dt) #uncertain robot's speed
+v_robot.inflate(0.001) #add incertitude to v_robot
 
-# v_robot = TubeVector(tdomain,dt,2) #uncertain robot's speed
-v0 = dx_robot(tdomain.lb()) #initial speed is known
-v_robot.set(v0, tdomain.lb())
-# ctc.deriv.contract(v_robot,a_robot)
 x = TubeVector(tdomain,dt,2) #uncertain robot's position
 x0 = x_truth(tdomain.lb()) #initial pose is known
 x.set(x0, tdomain.lb())
 ctc.deriv.contract(x, v_robot)
 
+######
 #create the sensor's contour gamma
+
 #v is a vector with the speed on each of the four parts that are concatenated to create the sensor's contour
 gamma,v = ContourTube(x,v_robot,a_robot,dt,L) 
-# print("gamma = ",gamma)
-# ##################### separate gamma into gamma + and gamma - #####################
-# gamma_plus,v_plus,yt_right,yt_left = GammaPlusTube(dt,x,v_robot,a_robot,L)
-# print('gamma_plus = ',gamma_plus)
-# GammaPlusTube(dt,x,v_robot,a_robot,L)
+
+######
+#separate gamma into gamma + and gamma 
+#TODO
 gamma_plus = TubeVector(gamma)
 v_plus = v.copy()
-##################### find self-intersections in gamma_plus #####################
+
+######
+#find self-intersections in gamma_plus
 tplane = TPlane(gamma_plus.tdomain())
 tplane.compute_detections(5*dt, gamma_plus)
 tplane.compute_proofs(gamma_plus)
 loops = tplane.proven_loops()
 
-print("v_plus = ",v_plus)
-# ##################### derivatives in self-intersections #####################
+######
+#derivatives in self-intersections 
 d_list_i,d_list_f = TangentLoop(v_plus,tdomain,loops)
 
-# #####################  create graph and update edges ##################### 
-# g = Graph(loops,gamma_plus.tdomain(),[d_list_i,d_list_f],yt_right,yt_left)
+######
+#create graph and update edges
 g = Graph(loops,gamma_plus.tdomain(),[d_list_i,d_list_f],[],[])
 g.UpdateEdges()
 
-# # ##################### Graphics with Vibes #####################
+######
+#Graphics with Vibes 
 beginDrawing()
 fig_map = VIBesFigMap("Map")
 # fig_map.smooth_tube_drawing(True)
 fig_map.set_tube_max_disp_slices(10000)
 fig_map.set_properties(100, 100, 800, 800)
 fig_map.axis_limits(world[0].lb(),world[0].ub(),world[1].lb(),world[1].ub())
-# fig_map.add_tube(x, "[x]", 0, 1)
 fig_map.add_trajectory(x_truth, "x", 0, 1,"red")
 fig_map.add_tube(gamma, "[gamma]", 0, 1)
-# fig_map.add_trajectory(gamma_plus, "green", 0, 1)
-# fig_map.draw_vehicle(tdomain.ub(), x_truth, robot_size)
 for l in loops:
     fig_map.draw_box(gamma_plus(l[0]),"k[]")
     fig_map.draw_box(gamma_plus(l[1]),"k[]")
 fig_map.show(0.)
 
-# ##################### Create separators from winding sets #####################
+######
+#Create separators from winding sets
 pixel = 0.05 # separators precision in image contractor
 seps,back_seps,contour_sep = g.CreateAllSeps(world,gamma,gamma_plus,dt,pixel)
 
-##################### SIVIA #####################
+######
+#SIVIA 
 epsilon = 0.1 # sivia's precision
 stack = deque([IntervalVector(world)])
 res_y, res_in, res_out = [], [], []
