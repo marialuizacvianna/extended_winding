@@ -8,7 +8,7 @@ from winding_lib import *
 from topo_lib import *
 
 total_time_begin = datetime.datetime.now()
-
+dimension = 2
 #comment the the examples that should not been used below
 
 ##################### Example from the Article #####################
@@ -32,41 +32,41 @@ robot_size = 2.
 
 ##################### Example 2 #####################
 # Equations for creating trajectory
-x1_robot = "(5* t-5*sin(10* t))"
-dx1_robot = "(5-50*cos(10* t))"
-ddx1_robot = "(500*sin(10* t))"
-x2_robot = "(2-3*cos(10* t))"
-dx2_robot = "(30*sin(10* t))"
-ddx2_robot = "(300*cos(10* t))"
-#mission time interval
-tdomain = Interval(-0.02,1.0)
-#time step
-dt=0.001
-#Range of visibility on each side
-L = 0.5
-#Area to classify
-world = IntervalVector([[-6,10],[-5,8]])
-#size of the robot for visualization
-robot_size = 1.
+# x1_robot = "(5* t-5*sin(10* t))"
+# dx1_robot = "(5-50*cos(10* t))"
+# ddx1_robot = "(500*sin(10* t))"
+# x2_robot = "(2-3*cos(10* t))"
+# dx2_robot = "(30*sin(10* t))"
+# ddx2_robot = "(300*cos(10* t))"
+# #mission time interval
+# tdomain = Interval(-0.02,1.0)
+# #time step
+# dt=0.001
+# #Range of visibility on each side
+# L = 0.5
+# #Area to classify
+# world = IntervalVector([[-6,10],[-5,8]])
+# #size of the robot for visualization
+# robot_size = 1.
 
 ##################### Example with Sweep Back #####################
 # Equations for creating trajectory
-x1_robot = "(8*cos( t))"
-dx1_robot = "(-8*sin( t))"
-ddx1_robot = "(-8*cos( t))"
-x2_robot = "(5*sin(2* t) - t)"
-dx2_robot = "(10*cos(2* t) - 1)"
-ddx2_robot = "(-20*sin(2* t))"
-#mission time interval
-tdomain = Interval(0,2*pi)
-#time step
-dt=0.01
-#Range of visibility on each side
-L = 3.6
-#Area to classify
-world = IntervalVector([[-20,20],[-18,12]])
-#size of the robot for visualization
-robot_size = 2.
+# x1_robot = "(8*cos( t))"
+# dx1_robot = "(-8*sin( t))"
+# ddx1_robot = "(-8*cos( t))"
+# x2_robot = "(5*sin(2* t) - t)"
+# dx2_robot = "(10*cos(2* t) - 1)"
+# ddx2_robot = "(-20*sin(2* t))"
+# #mission time interval
+# tdomain = Interval(0,2*pi)
+# #time step
+# dt=0.01
+# #Range of visibility on each side
+# L = 3.6
+# #Area to classify
+# world = IntervalVector([[-20,20],[-18,12]])
+# #size of the robot for visualization
+# robot_size = 2.
 
 ##################### create trajectory from equations (parametric equations can be replaced by real data) #####################
 # x_truth is the robot's pose (position and orientation)
@@ -77,10 +77,10 @@ dx_robot =  TrajectoryVector(tdomain, TFunction("("+dx1_robot+";"+dx2_robot+";("
 ddx_robot =  TrajectoryVector(tdomain, TFunction("("+ddx1_robot+";"+ddx2_robot+")"))
 #create the sensor's contour gamma
 #v is a vector with the speed on each of the four parts that are concatenated to create the sensor's contour
-gamma,v = ContourTraj(x_truth,dx_robot,ddx_robot,dt,L) 
+gamma,v = ContourTraj(x_truth,dx_robot,ddx_robot,dt,L,dimension) 
 
 ##################### separate gamma into gamma + and gamma - #####################
-gamma_plus,v_plus,yt_right,yt_left = GammaPlus(dt,x_truth,dx_robot,ddx_robot,L)
+gamma_plus,v_plus,yt_right,yt_left = GammaPlus(dt,x_truth,dx_robot,ddx_robot,L,dimension)
 
 ##################### find self-intersections in gamma_plus #####################
 tplane = TPlane(gamma_plus.tdomain())

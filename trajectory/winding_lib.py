@@ -52,12 +52,14 @@ def InverseTraj(x,dt):
     res[1] = Trajectory(map_y)
     return res
 
-def ContourTraj(x_robot,dx_robot,ddx_robot,dt,L):
+def ContourTraj(x_robot,dx_robot,ddx_robot,dt,L,dim):
     ## This function creates the sonar's contour from the robot's trajectory
     ## x_robot is a TrajectoryVector with the robot's state (position and orientation)
     ## dx_robot is a TrajectoryVector with the first derivative of the robot's state
+    ## dx_robot is a TrajectoryVector with the second derivative of the robot's state
     ## dt is the discretization step
-    ## d is the lateral distance in coordinate y if dimension == 1
+    ## L is the lateral range of visibility
+    ## dim is the dimension of the visible area dim in {1,2}
     ## It returns:
     ## the sonar's contour
     ## v, a list with the first derivative of each part of the sonar's contours
@@ -90,32 +92,56 @@ def ContourTraj(x_robot,dx_robot,ddx_robot,dt,L):
     v_left[1] = dx_robot[1] + L*dcos_theta
     v[2] = InverseTraj(v_left,dt)
     
-    #right to left
-    alpha0 = (((x_left[0](tdomain.ub()) - x_right[0](tdomain.ub()))/(tdomain.ub() - tdomain.lb())))
-    beta0 = (x_right[0](tdomain.ub()))
-    alpha1 = (((x_left[1](tdomain.ub()) - x_right[1](tdomain.ub()))/(tdomain.ub() - tdomain.lb())))
-    beta1 = (x_right[1](tdomain.ub()))
-    d_xrl = TrajectoryVector(np.arange(tdomain.lb(),tdomain.ub()+dt,dt), np.array([np.ones((1, len(np.arange(tdomain.lb(),tdomain.ub()+dt,dt)))), np.ones((1, len(np.arange(tdomain.lb(),tdomain.ub()+dt,dt))))]))
-    d_xrl[0] *= alpha0
-    d_xrl[1] *= alpha1
-    x_rl = TrajectoryVector(2)
-    x_rl = TrajectoryVector(tdomain, TFunction("((t - "+str(tdomain.lb())+")*"+str(alpha0)+"+"+str(beta0)+";(t - "+str(tdomain.lb())+")*"+str(alpha1)+"+"+str(beta1)+")"))
-    v[1] = d_xrl
+    #right to left 
+    if(dim == 1):
+        alpha0 = (((x_left[0](tdomain.ub()) - x_right[0](tdomain.ub()))/(tdomain.ub() - tdomain.lb())))
+        beta0 = (x_right[0](tdomain.ub()))
+        alpha1 = (((x_left[1](tdomain.ub()) - x_right[1](tdomain.ub()))/(tdomain.ub() - tdomain.lb())))
+        beta1 = (x_right[1](tdomain.ub()))
+        d_xrl = TrajectoryVector(np.arange(tdomain.lb(),tdomain.ub()+dt,dt), np.array([np.ones((1, len(np.arange(tdomain.lb(),tdomain.ub()+dt,dt)))), np.ones((1, len(np.arange(tdomain.lb(),tdomain.ub()+dt,dt))))]))
+        d_xrl[0] *= alpha0
+        d_xrl[1] *= alpha1
+        x_rl = TrajectoryVector(2)
+        x_rl = TrajectoryVector(tdomain, TFunction("((t - "+str(tdomain.lb())+")*"+str(alpha0)+"+"+str(beta0)+";(t - "+str(tdomain.lb())+")*"+str(alpha1)+"+"+str(beta1)+")"))
+        v[1] = d_xrl
+    else: 
+        init_ang = (-pi/2. + x_robot[2](tdomain.ub()))
+        time_t = str(init_ang) +  "+("+str((pi)/(tdomain.ub()-tdomain.lb()))+"*(t - "+str(tdomain.lb())+"))"
+        x_cir = str(x_robot[0](tdomain.ub())) + "+"+str(L)+"*cos("+time_t+")" 
+        y_cir = str(x_robot[1](tdomain.ub())) + "+"+str(L)+"*sin("+time_t+")" 
+        x_rl = TrajectoryVector(tdomain, TFunction("("+x_cir+";"+y_cir+")"))
+        dx_cir = "("+str(-L)+"*sin("+time_t+"))*("+str(pi)+")" 
+        dy_cir = "("+str(L)+"*cos("+time_t+"))*("+str(pi)+")" 
+        d_xrl = TrajectoryVector(tdomain, TFunction("("+dx_cir+";"+dy_cir+")"))
+        v[1] = d_xrl    
 
-    #left to right
-    alpha0 = (((x_right[0](tdomain.lb()) - x_left[0](tdomain.lb()))/(tdomain.ub() - tdomain.lb())))
-    beta0 = (x_left[0](tdomain.lb()))
-    alpha1 = (((x_right[1](tdomain.lb()) - x_left[1](tdomain.lb()))/(tdomain.ub() - tdomain.lb())))
-    beta1 = (x_left[1](tdomain.lb()))
-    d_xlr = TrajectoryVector(np.arange(tdomain.lb(),tdomain.ub()+dt,dt), np.array([np.ones((1, len(np.arange(tdomain.lb(),tdomain.ub()+dt,dt)))), np.ones((1, len(np.arange(tdomain.lb(),tdomain.ub()+dt,dt))))]))
-    d_xlr[0] *= alpha0
-    d_xlr[1] *= alpha1
-    x_lr = TrajectoryVector(2)
-    x_lr = TrajectoryVector(tdomain, TFunction("((t - "+str(tdomain.lb())+")*"+str(alpha0)+"+"+str(beta0)+";(t - "+str(tdomain.lb())+")*"+str(alpha1)+"+"+str(beta1)+")"))
-    v[3] = d_xlr
+    #left to right 
+    if(dim == 1):
+        alpha0 = (((x_right[0](tdomain.lb()) - x_left[0](tdomain.lb()))/(tdomain.ub() - tdomain.lb())))
+        beta0 = (x_left[0](tdomain.lb()))
+        alpha1 = (((x_right[1](tdomain.lb()) - x_left[1](tdomain.lb()))/(tdomain.ub() - tdomain.lb())))
+        beta1 = (x_left[1](tdomain.lb()))
+        d_xlr = TrajectoryVector(np.arange(tdomain.lb(),tdomain.ub()+dt,dt), np.array([np.ones((1, len(np.arange(tdomain.lb(),tdomain.ub()+dt,dt)))), np.ones((1, len(np.arange(tdomain.lb(),tdomain.ub()+dt,dt))))]))
+        d_xlr[0] *= alpha0
+        d_xlr[1] *= alpha1
+        x_lr = TrajectoryVector(2)
+        x_lr = TrajectoryVector(tdomain, TFunction("((t - "+str(tdomain.lb())+")*"+str(alpha0)+"+"+str(beta0)+";(t - "+str(tdomain.lb())+")*"+str(alpha1)+"+"+str(beta1)+")"))
+        v[3] = d_xlr
+    else:
+        init_ang = (pi/2. + x_robot[2](tdomain.lb()))
+        time_t = str(init_ang) +  "+("+str((pi)/(tdomain.ub()-tdomain.lb()))+"*(t - "+str(tdomain.lb())+"))"
+        x_cir = str(x_robot[0](tdomain.lb())) + "+"+str(L)+"*cos("+time_t+")" 
+        y_cir = str(x_robot[1](tdomain.lb())) + "+"+str(L)+"*sin("+time_t+")" 
+        dx_cir = "("+str(-L)+"*sin("+time_t+"))*("+str(pi)+")" 
+        dy_cir = "("+str(L)+"*cos("+time_t+"))*("+str(pi)+")" 
+        x_lr = TrajectoryVector(tdomain, TFunction("("+x_cir+";"+y_cir+")"))
+        d_xlr = TrajectoryVector(tdomain, TFunction("("+dx_cir+";"+dy_cir+")"))
+        v[3] = d_xlr    
+    
+    
     return ConcatenateTraj([x_right,x_rl,InverseTraj(x_left,dt),x_lr],dt),v
 
-def ContourRL(x_right,dx_right,x_left,dx_left,dt):
+def ContourRL(x_right,dx_right,x_left,dx_left,dt,L,dim):
     ## This function creates the sonar's contour from the right and left extremity trajectories
     ## x_right is a TrajectoryVector with the sonar's extremity on the right
     ## dx_right is a TrajectoryVector with the first derivative of x_right
@@ -133,33 +159,62 @@ def ContourRL(x_right,dx_right,x_left,dx_left,dt):
     v[0] = dx_right
     #left contour
     v[2] = InverseTraj(dx_left,dt)
+    
     #right to left
-    t_values = np.arange(tdomain.lb(),tdomain.ub()+dt,dt)
-    alpha0 = (((x_left[0](tdomain.ub()) - x_right[0](tdomain.ub()))/(tdomain.ub() - tdomain.lb())))
-    beta0 = (x_right[0](tdomain.ub()))
-    alpha1 = (((x_left[1](tdomain.ub()) - x_right[1](tdomain.ub()))/(tdomain.ub() - tdomain.lb())))
-    beta1 = (x_right[1](tdomain.ub()))
-    d_xrl = TrajectoryVector(t_values, np.array([np.ones((1, len(t_values))), np.ones((1, len(t_values)))]))
-    d_xrl[0] *= alpha0
-    d_xrl[1] *= alpha1
-    x_rl = TrajectoryVector(tdomain, TFunction("((t - "+str(tdomain.lb())+")*"+str(alpha0)+"+"+str(beta0)+";(t - "+str(tdomain.lb())+")*"+str(alpha1)+"+"+str(beta1)+")"))
-    v[1] = d_xrl
+    if(dim == 1):
+        t_values = np.arange(tdomain.lb(),tdomain.ub()+dt,dt)
+        alpha0 = (((x_left[0](tdomain.ub()) - x_right[0](tdomain.ub()))/(tdomain.ub() - tdomain.lb())))
+        beta0 = (x_right[0](tdomain.ub()))
+        alpha1 = (((x_left[1](tdomain.ub()) - x_right[1](tdomain.ub()))/(tdomain.ub() - tdomain.lb())))
+        beta1 = (x_right[1](tdomain.ub()))
+        d_xrl = TrajectoryVector(t_values, np.array([np.ones((1, len(t_values))), np.ones((1, len(t_values)))]))
+        d_xrl[0] *= alpha0
+        d_xrl[1] *= alpha1
+        x_rl = TrajectoryVector(tdomain, TFunction("((t - "+str(tdomain.lb())+")*"+str(alpha0)+"+"+str(beta0)+";(t - "+str(tdomain.lb())+")*"+str(alpha1)+"+"+str(beta1)+")"))
+        v[1] = d_xrl
+    else:
+        theta_rob = atan2(dx_right[1](tdomain.ub()),dx_right[0](tdomain.ub()))
+        x_rob = x_right[0](tdomain.ub()) - L*sin(theta_rob)
+        y_rob = x_right[1](tdomain.ub()) + L*cos(theta_rob)
+        init_ang = (-pi/2. + theta_rob)
+        time_t = str(init_ang) +  "+("+str((pi)/(tdomain.ub()-tdomain.lb()))+"*(t - "+str(tdomain.lb())+"))"
+        x_cir = str(x_rob) + "+"+str(L)+"*cos("+time_t+")" 
+        y_cir = str(y_rob) + "+"+str(L)+"*sin("+time_t+")" 
+        x_rl = TrajectoryVector(tdomain, TFunction("("+x_cir+";"+y_cir+")"))
+        dx_cir = "("+str(-L)+"*sin("+time_t+"))*("+str(pi)+")" 
+        dy_cir = "("+str(L)+"*cos("+time_t+"))*("+str(pi)+")" 
+        d_xrl = TrajectoryVector(tdomain, TFunction("("+dx_cir+";"+dy_cir+")"))
+        v[1] = d_xrl  
 
     #left to right
-    t_values = np.arange(tdomain.lb(),tdomain.ub(),dt)
-    alpha0 = (((x_right[0](tdomain.lb()) - x_left[0](tdomain.lb()))/(tdomain.ub() - tdomain.lb())))
-    beta0 = (x_left[0](tdomain.lb()))
-    alpha1 = (((x_right[1](tdomain.lb()) - x_left[1](tdomain.lb()))/(tdomain.ub() - tdomain.lb())))
-    beta1 = (x_left[1](tdomain.lb()))
-    d_xlr = TrajectoryVector(t_values, np.array([np.ones((1, len(t_values))), np.ones((1, len(t_values)))]))
-    d_xlr[0] *= alpha0
-    d_xlr[1] *= alpha1
-    x_lr = TrajectoryVector(tdomain, TFunction("((t - "+str(tdomain.lb())+")*"+str(alpha0)+"+"+str(beta0)+";(t - "+str(tdomain.lb())+")*"+str(alpha1)+"+"+str(beta1)+")"))
-    v[3] = d_xlr
+    if(dim == 1):
+        t_values = np.arange(tdomain.lb(),tdomain.ub(),dt)
+        alpha0 = (((x_right[0](tdomain.lb()) - x_left[0](tdomain.lb()))/(tdomain.ub() - tdomain.lb())))
+        beta0 = (x_left[0](tdomain.lb()))
+        alpha1 = (((x_right[1](tdomain.lb()) - x_left[1](tdomain.lb()))/(tdomain.ub() - tdomain.lb())))
+        beta1 = (x_left[1](tdomain.lb()))
+        d_xlr = TrajectoryVector(t_values, np.array([np.ones((1, len(t_values))), np.ones((1, len(t_values)))]))
+        d_xlr[0] *= alpha0
+        d_xlr[1] *= alpha1
+        x_lr = TrajectoryVector(tdomain, TFunction("((t - "+str(tdomain.lb())+")*"+str(alpha0)+"+"+str(beta0)+";(t - "+str(tdomain.lb())+")*"+str(alpha1)+"+"+str(beta1)+")"))
+        v[3] = d_xlr
+    else:
+        theta_rob = atan2(dx_right[1](tdomain.lb()),dx_right[0](tdomain.lb()))
+        x_rob = x_right[0](tdomain.lb()) - L*sin(theta_rob)
+        y_rob = x_right[1](tdomain.lb()) + L*cos(theta_rob)
+        init_ang = (pi/2. + theta_rob)
+        time_t = str(init_ang) +  "+("+str((pi)/(tdomain.ub()-tdomain.lb()))+"*(t - "+str(tdomain.lb())+"))"
+        x_cir = str(x_rob) + "+"+str(L)+"*cos("+time_t+")" 
+        y_cir = str(y_rob) + "+"+str(L)+"*sin("+time_t+")" 
+        dx_cir = "("+str(-L)+"*sin("+time_t+"))*("+str(pi)+")" 
+        dy_cir = "("+str(L)+"*cos("+time_t+"))*("+str(pi)+")" 
+        x_lr = TrajectoryVector(tdomain, TFunction("("+x_cir+";"+y_cir+")"))
+        d_xlr = TrajectoryVector(tdomain, TFunction("("+dx_cir+";"+dy_cir+")"))
+        v[3] = d_xlr    
 
     return ConcatenateTraj([x_right,x_rl,InverseTraj(x_left,dt),x_lr],dt),v
 
-def GammaPlus(dt,x_truth,dx_robot,ddx_robot,L):
+def GammaPlus(dt,x_truth,dx_robot,ddx_robot,L,dim):
     tdomain = x_truth.tdomain()
     sin_theta = dx_robot[1].sample(dt)/sqrt(dx_robot[0].sample(dt)*dx_robot[0].sample(dt) + dx_robot[1].sample(dt)*dx_robot[1].sample(dt))
     cos_theta = dx_robot[0].sample(dt)/sqrt(dx_robot[0].sample(dt)*dx_robot[0].sample(dt) + dx_robot[1].sample(dt)*dx_robot[1].sample(dt))
@@ -260,7 +315,7 @@ def GammaPlus(dt,x_truth,dx_robot,ddx_robot,L):
     dtan_traj_l[1] = Trajectory(t, data_vy_l)
 
 
-    gamma_after,v_after = ContourRL(tan_traj_r,dtan_traj_r,tan_traj_l,dtan_traj_l,dt)
+    gamma_after,v_after = ContourRL(tan_traj_r,dtan_traj_r,tan_traj_l,dtan_traj_l,dt,L,dim)
 
     return gamma_after,v_after,yt_right,yt_left
 
