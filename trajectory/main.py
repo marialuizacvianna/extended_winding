@@ -30,6 +30,25 @@ world = IntervalVector([[-20,40],[-25,40]])
 #size of the robot for visualization
 robot_size = 2.
 
+##################### Example no self-inter #####################
+# Equations for creating trajectory
+x1_robot = "t"
+dx1_robot = "1"
+ddx1_robot = "0"
+x2_robot = "10"
+dx2_robot = "0"
+ddx2_robot = "0"
+#mission time interval
+tdomain = Interval(0,15) 
+#time step
+dt=0.1
+#Range of visibility on each side
+L = 5.0
+#Area to classify
+world = IntervalVector([[-10,25],[0,25]]) 
+#size of the robot for visualization
+robot_size = 2.
+
 ##################### Example 2 #####################
 # Equations for creating trajectory
 # x1_robot = "(5* t-5*sin(10* t))"
