@@ -19,8 +19,14 @@ class Graph:
         self._back_timel = back_timel
         self._v_count = 0
         self._e_count = 0
-        for i in range(self._n_v):
-            self.AddVertice(inter_list[i][0],inter_list[i][1],d_list[0][i],d_list[1][i])
+
+        if(self._n_v > 0):
+            for i in range(self._n_v):
+                self.AddVertice(inter_list[i][0],inter_list[i][1],d_list[0][i],d_list[1][i])
+        else:
+            self._min_wn = 0
+            self._max_wn = 1
+            self.AddVertice(Interval(tdomain.lb()),Interval(tdomain.ub()),[0,1],[1,0])
 
         self.EdgesFromVertices()
 
