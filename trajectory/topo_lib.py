@@ -1,9 +1,13 @@
+# from pyibex import *
+# from pyibex.image import CtcRaster
 from codac import *
 from codac.unsupported import *
 import numpy as np
 from math import ceil,floor
 import cv2
 import matplotlib.pyplot as plt
+
+
 
 class Graph:
     def __init__(self,inter_list,tdomain,d_list,back_timer,back_timel):
@@ -19,10 +23,30 @@ class Graph:
         self._back_timel = back_timel
         self._v_count = 0
         self._e_count = 0
-        for i in range(self._n_v):
-            self.AddVertice(inter_list[i][0],inter_list[i][1],d_list[0][i],d_list[1][i])
+
+        if(self._n_v > 0):
+            for i in range(self._n_v):
+                self.AddVertice(inter_list[i][0],inter_list[i][1],d_list[0][i],d_list[1][i])
+        else:
+            self._min_wn = 1
+            self._max_wn = 1
+            self._n_v = 1
+            self._n_e = 1
+            self.AddVertice(Interval(tdomain.lb()),Interval(tdomain.ub()),[Interval(0),Interval(1)],[Interval(1),Interval(0)])
 
         self.EdgesFromVertices()
+
+    def print_graph(self):
+        for i in range(self._n_v):
+            print("_V[i]._tdomain = ", self._V[i]._tdomain)
+
+        print("edges = ")
+        for i in range(self._n_e):
+            print("i = ",i)
+            print("g._E[i]._T = ",self._E[i]._T)
+            print("g._E[i]._l_v = ", self._E[i]._l_v)
+            print("g._E[i]._r_v = ", self._E[i]._r_v)
+            print("g._E[i]._u = ", self._E[i]._u)
 
     def EdgesFromVertices(self):
         V_dict = dict()
@@ -33,37 +57,42 @@ class Graph:
         V_keys = list(V_dict.keys())
         V_keys.sort()
 
-        for i in range(self._n_e):
-            vi = V_dict[V_keys[i]]
-            vf = 0
-            t = Interval(0)
-            if(i == self._n_e - 1):
-                t = [Interval(V_dict[V_keys[len(V_keys) - 1]]._t_f.lb(),self._tdomain.ub()),Interval(self._tdomain.lb(),V_dict[V_keys[0]]._t_i.ub())]
-                vf = V_dict[V_keys[0]]
-            else:
-                t_i = 0
-                t_f = 0
-            
-                t_i = V_keys[i]
-                if(V_dict[V_keys[i+1]]._t_i.lb() == V_keys[i+1]):
-                    t_f = V_dict[V_keys[i+1]]._t_i.ub()
+        if(self._n_e > 1):
+            for i in range(self._n_e):
+                vi = V_dict[V_keys[i]]
+                vf = 0
+                t = Interval(0)
+                if(i == self._n_e - 1):
+                    t = [Interval(V_dict[V_keys[len(V_keys) - 1]]._t_f.lb(),self._tdomain.ub()),Interval(self._tdomain.lb(),V_dict[V_keys[0]]._t_i.ub())]
+                    vf = V_dict[V_keys[0]]
                 else:
-                    t_f = V_dict[V_keys[i+1]]._t_f.ub()
-               
-                t = [Interval(t_i,t_f)]
-                vf = V_dict[V_keys[i+1]]
+                    t_i = 0
+                    t_f = 0
+                
+                    t_i = V_keys[i]
+                    if(V_dict[V_keys[i+1]]._t_i.lb() == V_keys[i+1]):
+                        t_f = V_dict[V_keys[i+1]]._t_i.ub()
+                    else:
+                        t_f = V_dict[V_keys[i+1]]._t_f.ub()
+                
+                    t = [Interval(t_i,t_f)]
+                    vf = V_dict[V_keys[i+1]]
 
-            dir = vi._d_i[0]*vi._d_f[1] - vi._d_f[0]*vi._d_i[1]
-        
-            if(not((vi._t_f&Interval(t[0].lb())).is_empty())):
-                dir = -dir
+                dir = vi._d_i[0]*vi._d_f[1] - vi._d_f[0]*vi._d_i[1]
+            
+                if(not((vi._t_f&Interval(t[0].lb())).is_empty())):
+                    dir = -dir
 
-            new_e = self.AddEdge(t,vi,vf,dir)
+                new_e = self.AddEdge(t,vi,vf,dir)
 
 
-            self._V[vi._nb]._e_i.append(new_e)
-            self._V[vf._nb]._e_f.append(new_e)
+                self._V[vi._nb]._e_i.append(new_e)
+                self._V[vf._nb]._e_f.append(new_e)
 
+        else:
+            new_e = self.AddEdge([self._tdomain],self._V[0],self._V[0],Interval(-1))
+            self._V[0]._e_i.append(new_e)
+            self._V[0]._e_f.append(new_e)
 
 
     def AddVertice(self,t_1,t_2,d_i,d_f):
@@ -388,7 +417,7 @@ class Graph:
         return sep
 
     def CreateAllSeps(self,X,gamma,gamma_pos,dt,eps):
-            if(self._min_wn <= 0):
+            if(self._max_wn <= 0):
                 return []
             seps = dict()
             back_sep = []
@@ -429,6 +458,7 @@ class Edge:
         self._v_f = v_f #final vertice
         self._u = 0 #update indice
         self._nb = nb
+
 
 
 if __name__ == "__main__":
