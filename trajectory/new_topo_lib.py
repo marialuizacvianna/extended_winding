@@ -55,13 +55,15 @@ class Edge:
 
 
 class Graph:
-    def __init__(self,_V,idx_list,gamma):
+    def __init__(self,_V,idx_list,gamma,_back_timer,_back_timel):
         self.V = _V
         self.min_wn = float('inf')
         self.max_wn = 0
         self.E = []
         idx_used = []
         count_edge = 0
+        self.back_timer = _back_timer
+        self.back_timel = _back_timel
 
         for i in range(len(idx_list) - 1):
             idx = idx_list[i]
@@ -97,9 +99,10 @@ class Graph:
             traj = TrajectoryVector(gamma)
             pos_x = traj(gamma.tdomain().lb())[0]
             pos_y = traj(gamma.tdomain().lb())[1]
-            new_e = Edge([traj],Vertice(pos_x,pos_y),Vertice(pos_x,pos_y),1,count_edge)
+            new_v = Vertice(pos_x,pos_y,0)
+            new_e = Edge([traj],new_v,new_v,1,count_edge)
             self.E.append(new_e)
-            self.V.append(Vertice(pos_x,pos_y))
+            self.V.append(new_v)
             self.V[0].e_i.append(count_edge)
             self.V[0].e_f.append(count_edge)
             count_edge+= 1
@@ -291,129 +294,129 @@ class Graph:
         sep = SepCtcPair(ctcIn, ctcOut)
         return img_count,sep
 
-    # def CreateBackSeps(self,X,gamma,gamma_pos,dt,eps):
-    #     pixel_x = eps
-    #     pixel_y = -eps
-    #     npx = int((X[0].ub() - X[0].lb())/abs(pixel_x))
-    #     npy = int((X[1].ub() - X[1].lb())/abs(pixel_y))
+    def CreateBackSeps(self,X,gamma,gamma_pos,dt,eps):
+        pixel_x = eps
+        pixel_y = -eps
+        npx = int((X[0].ub() - X[0].lb())/abs(pixel_x))
+        npy = int((X[1].ub() - X[1].lb())/abs(pixel_y))
 
-    #     seps = []
-    #     left_interval = (self._tdomain/4.0) + 2*((self._tdomain/4.0).diam())
-    #     for domain in self._back_timel:
-    #         img_aux = np.zeros((npx, npy), dtype=np.int64)
-    #         t = domain.lb()
-    #         last_t = domain.lb()
-    #         while(t < domain.ub()):
-    #             t += dt
-    #             if(t > domain.ub()):
-    #                 t = domain.ub()
+        seps = []
+        left_interval = (self._tdomain/4.0) + 2*((self._tdomain/4.0).diam())
+        for domain in self.back_timel:
+            img_aux = np.zeros((npx, npy), dtype=np.int64)
+            t = domain.lb()
+            last_t = domain.lb()
+            while(t < domain.ub()):
+                t += dt
+                if(t > domain.ub()):
+                    t = domain.ub()
 
 
-    #             xi = gamma(Interval(left_interval.ub()) - Interval(last_t,t))[0]
-    #             yi = gamma(Interval(left_interval.ub()) - Interval(last_t,t))[1]
+                xi = gamma(Interval(left_interval.ub()) - Interval(last_t,t))[0]
+                yi = gamma(Interval(left_interval.ub()) - Interval(last_t,t))[1]
 
-    #             x_pix = (xi - X[0].lb())/pixel_x
-    #             y_pix= (yi - X[1].ub())/pixel_y
+                x_pix = (xi - X[0].lb())/pixel_x
+                y_pix= (yi - X[1].ub())/pixel_y
 
-    #             for i in range(floor(x_pix.lb()),ceil(x_pix.ub()) + 1):
-    #                 for j in range(floor(y_pix.lb()),ceil(y_pix.ub()) +1 ):
-    #                     img_aux[i,j] = 1
+                for i in range(floor(x_pix.lb()),ceil(x_pix.ub()) + 1):
+                    for j in range(floor(y_pix.lb()),ceil(y_pix.ub()) +1 ):
+                        img_aux[i,j] = 1
                 
 
-    #             xi = gamma_pos(Interval(left_interval.ub()) - Interval(last_t,t))[0]
-    #             yi = gamma_pos(Interval(left_interval.ub()) - Interval(last_t,t))[1]
+                xi = gamma_pos(Interval(left_interval.ub()) - Interval(last_t,t))[0]
+                yi = gamma_pos(Interval(left_interval.ub()) - Interval(last_t,t))[1]
 
-    #             x_pix = (xi - X[0].lb())/pixel_x
-    #             y_pix= (yi - X[1].ub())/pixel_y
+                x_pix = (xi - X[0].lb())/pixel_x
+                y_pix= (yi - X[1].ub())/pixel_y
 
-    #             for i in range(floor(x_pix.lb()),ceil(x_pix.ub()) +1 ):
-    #                 for j in range(floor(y_pix.lb()),ceil(y_pix.ub()) +1):
-    #                     img_aux[i,j] = 1
+                for i in range(floor(x_pix.lb()),ceil(x_pix.ub()) +1 ):
+                    for j in range(floor(y_pix.lb()),ceil(y_pix.ub()) +1):
+                        img_aux[i,j] = 1
 
-    #             last_t = t
-    #         contours, hyera = cv2.findContours(np.ascontiguousarray(img_aux.copy(), dtype=np.uint8).astype(np.uint8), cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
-    #         images_out = []
-    #         for idx in np.arange(0,len(contours),1):
-    #                     c = contours[idx]
-    #                     if(hyera[0][idx][3] == -1):
-    #                         img_out_i = np.ascontiguousarray(img_aux.copy(), dtype=np.uint8)
-    #                         cv2.drawContours(img_out_i, [c], contourIdx=0, color=(255,255,255),thickness=-1)
-    #                         images_out.append(img_out_i)
+                last_t = t
+            contours, hyera = cv2.findContours(np.ascontiguousarray(img_aux.copy(), dtype=np.uint8).astype(np.uint8), cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
+            images_out = []
+            for idx in np.arange(0,len(contours),1):
+                        c = contours[idx]
+                        if(hyera[0][idx][3] == -1):
+                            img_out_i = np.ascontiguousarray(img_aux.copy(), dtype=np.uint8)
+                            cv2.drawContours(img_out_i, [c], contourIdx=0, color=(255,255,255),thickness=-1)
+                            images_out.append(img_out_i)
 
-    #         img_out = np.ascontiguousarray(np.zeros((npx, npy), dtype=np.int64), dtype=np.uint8)
-    #         for img in images_out:
-    #             img[img > 0] = 1
-    #             img_out += img
+            img_out = np.ascontiguousarray(np.zeros((npx, npy), dtype=np.int64), dtype=np.uint8)
+            for img in images_out:
+                img[img > 0] = 1
+                img_out += img
 
-    #         img_out[(img_out%2) == 0] = 0
-    #         img_in = np.ones((npx, npy), dtype=np.uint8) - img_out
-    #         img_out[img_aux > 0 ] = 1
-    #         img_in[img_aux > 0 ] = 1
+            img_out[(img_out%2) == 0] = 0
+            img_in = np.ones((npx, npy), dtype=np.uint8) - img_out
+            img_out[img_aux > 0 ] = 1
+            img_in[img_aux > 0 ] = 1
 
-    #         img_out = img_out.cumsum(0).cumsum(1)
-    #         img_in = img_in.cumsum(0).cumsum(1)
-    #         ctcOut = CtcRaster(img_out, X[0].lb(), X[1].ub(), pixel_x, pixel_y)
-    #         ctcIn = CtcRaster(img_in, X[0].lb(), X[1].ub(), pixel_x, pixel_y)
-    #         sep = SepCtcPair(ctcIn, ctcOut)
-    #         seps.append(sep)
+            img_out = img_out.cumsum(0).cumsum(1)
+            img_in = img_in.cumsum(0).cumsum(1)
+            ctcOut = CtcRaster(img_out, X[0].lb(), X[1].ub(), pixel_x, pixel_y)
+            ctcIn = CtcRaster(img_in, X[0].lb(), X[1].ub(), pixel_x, pixel_y)
+            sep = SepCtcPair(ctcIn, ctcOut)
+            seps.append(sep)
 
-    #     for domain in self._back_timer:
-    #         img_aux = np.zeros((npx, npy), dtype=np.int64)
-    #         t = domain.lb()
-    #         last_t = domain.lb()
-    #         while(t < domain.ub()):
-    #             t += dt
-    #             if(t > domain.ub()):
-    #                 t = domain.ub()
+        for domain in self.back_timer:
+            img_aux = np.zeros((npx, npy), dtype=np.int64)
+            t = domain.lb()
+            last_t = domain.lb()
+            while(t < domain.ub()):
+                t += dt
+                if(t > domain.ub()):
+                    t = domain.ub()
 
-    #             xi = gamma(Interval(last_t,t))[0]
-    #             yi = gamma(Interval(last_t,t))[1]
+                xi = gamma(Interval(last_t,t))[0]
+                yi = gamma(Interval(last_t,t))[1]
 
-    #             x_pix = (xi - X[0].lb())/pixel_x
-    #             y_pix= (yi - X[1].ub())/pixel_y
+                x_pix = (xi - X[0].lb())/pixel_x
+                y_pix= (yi - X[1].ub())/pixel_y
 
-    #             for i in range(floor(x_pix.lb()),ceil(x_pix.ub()) + 1):
-    #                 for j in range(floor(y_pix.lb()),ceil(y_pix.ub()) + 1):
-    #                     img_aux[i,j] = 1
+                for i in range(floor(x_pix.lb()),ceil(x_pix.ub()) + 1):
+                    for j in range(floor(y_pix.lb()),ceil(y_pix.ub()) + 1):
+                        img_aux[i,j] = 1
 
-    #             xi = gamma_pos(Interval(last_t,t))[0]
-    #             yi = gamma_pos(Interval(last_t,t))[1]
+                xi = gamma_pos(Interval(last_t,t))[0]
+                yi = gamma_pos(Interval(last_t,t))[1]
 
-    #             x_pix = (xi - X[0].lb())/pixel_x
-    #             y_pix= (yi - X[1].ub())/pixel_y
+                x_pix = (xi - X[0].lb())/pixel_x
+                y_pix= (yi - X[1].ub())/pixel_y
 
-    #             for i in range(floor(x_pix.lb()),ceil(x_pix.ub()) + 1):
-    #                 for j in range(floor(y_pix.lb()),ceil(y_pix.ub()) +1):
-    #                     img_aux[i,j] = 1
+                for i in range(floor(x_pix.lb()),ceil(x_pix.ub()) + 1):
+                    for j in range(floor(y_pix.lb()),ceil(y_pix.ub()) +1):
+                        img_aux[i,j] = 1
 
-    #             last_t = t
+                last_t = t
 
-    #         contours, hyera = cv2.findContours(np.ascontiguousarray(img_aux.copy(), dtype=np.uint8).astype(np.uint8), cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
-    #         images_out = []
-    #         for idx in np.arange(0,len(contours),1):
-    #                     c = contours[idx]
-    #                     if(hyera[0][idx][3] == -1):
-    #                         img_out_i = np.ascontiguousarray(img_aux.copy(), dtype=np.uint8)
-    #                         cv2.drawContours(img_out_i, [c], contourIdx=0, color=(255,255,255),thickness=-1)
-    #                         images_out.append(img_out_i)
+            contours, hyera = cv2.findContours(np.ascontiguousarray(img_aux.copy(), dtype=np.uint8).astype(np.uint8), cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
+            images_out = []
+            for idx in np.arange(0,len(contours),1):
+                        c = contours[idx]
+                        if(hyera[0][idx][3] == -1):
+                            img_out_i = np.ascontiguousarray(img_aux.copy(), dtype=np.uint8)
+                            cv2.drawContours(img_out_i, [c], contourIdx=0, color=(255,255,255),thickness=-1)
+                            images_out.append(img_out_i)
 
-    #         img_out = np.ascontiguousarray(np.zeros((npx, npy), dtype=np.int64), dtype=np.uint8)
-    #         for img in images_out:
-    #             img[img > 0] = 1
-    #             img_out += img
+            img_out = np.ascontiguousarray(np.zeros((npx, npy), dtype=np.int64), dtype=np.uint8)
+            for img in images_out:
+                img[img > 0] = 1
+                img_out += img
 
-    #         img_out[(img_out%2) == 0] = 0
-    #         img_in = np.ones((npx, npy), dtype=np.uint8) - img_out
-    #         img_out[img_aux > 0 ] = 1
-    #         img_in[img_aux > 0 ] = 1
+            img_out[(img_out%2) == 0] = 0
+            img_in = np.ones((npx, npy), dtype=np.uint8) - img_out
+            img_out[img_aux > 0 ] = 1
+            img_in[img_aux > 0 ] = 1
 
-    #         img_out = img_out.cumsum(0).cumsum(1)
-    #         img_in = img_in.cumsum(0).cumsum(1)
-    #         ctcOut = CtcRaster(img_out, X[0].lb(), X[1].ub(), pixel_x, pixel_y)
-    #         ctcIn = CtcRaster(img_in, X[0].lb(), X[1].ub(), pixel_x, pixel_y)
-    #         sep = SepCtcPair(ctcIn, ctcOut)
-    #         seps.append(sep)
-    #     return seps
+            img_out = img_out.cumsum(0).cumsum(1)
+            img_in = img_in.cumsum(0).cumsum(1)
+            ctcOut = CtcRaster(img_out, X[0].lb(), X[1].ub(), pixel_x, pixel_y)
+            ctcIn = CtcRaster(img_in, X[0].lb(), X[1].ub(), pixel_x, pixel_y)
+            sep = SepCtcPair(ctcIn, ctcOut)
+            seps.append(sep)
+        return seps
 
 
     def CreateContourSep(self,X,eps,img_aux):
@@ -448,13 +451,9 @@ class Graph:
             for i in np.arange(self.min_wn,self.max_wn+1,1):
                 img_aux,seps[i] = self.CreateSep(i,X,dt,eps,img_aux)
 
-            # if(len(self._back_timer) > 0 or len(self._back_timel)):
-            #     back_sep = self.CreateBackSeps(X,gamma,gamma_pos,dt,eps)
+            if(len(self.back_timer) > 0 or len(self.back_timel)):
+                back_sep = self.CreateBackSeps(X,gamma,gamma_pos,dt,eps)
 
             contour_sep = self.CreateContourSep(X,eps,img_aux)
 
-            # return seps,back_sep,contour_sep
-            return seps,[],contour_sep
-
-
-
+            return seps,back_sep,contour_sep
