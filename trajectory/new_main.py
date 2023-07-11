@@ -243,7 +243,7 @@ for wn in seps.keys():
             fig.draw_box(X,"gray[green]")
         elif(not (x_out[0].is_empty() or x_out[1].is_empty())): #partially inside
             x_in, x_out = X.copy(),X.copy()
-            # contour_sep.separate(x_in, x_out)
+            contour_sep.separate(x_in, x_out)
             if(X.max_diam() < epsilon or x_in[0].is_empty() or x_in[1].is_empty()):
                 fig.draw_box(X,"gray[yellow]")
             else:
@@ -274,7 +274,7 @@ for back_sep in back_seps:
             fig.draw_box(X,"gray[green]")
         elif(not (x_out[0].is_empty() or x_out[1].is_empty())): #partially inside
             x_in, x_out = X.copy(),X.copy()
-            # contour_sep.separate(x_in, x_out)
+            contour_sep.separate(x_in, x_out)
             if(X.max_diam() < epsilon or x_in[0].is_empty() or x_in[1].is_empty()):
                 fig.draw_box(X,"gray[yellow]")
             else:
@@ -318,7 +318,7 @@ while len(stack) > 0:
                 nb_in += Interval(0,1)
 
     x_in, x_out = X.copy(),X.copy()
-    # contour_sep.separate(x_in, x_out)
+    contour_sep.separate(x_in, x_out)
     if(nb_in.ub() > nb_in.lb()):
         if(X.max_diam() < epsilon or x_in[0].is_empty() or x_in[1].is_empty()):
             fig_siv.draw_box(X,"k[k]")

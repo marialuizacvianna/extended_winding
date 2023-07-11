@@ -416,24 +416,22 @@ class Graph:
     #     return seps
 
 
-    # def CreateContourSep(self,X,dt,eps,img_aux):
-    #     pixel_x = eps
-    #     pixel_y = -eps
-    #     npx = int((X[0].ub() - X[0].lb())/abs(pixel_x))
-    #     npy = int((X[1].ub() - X[1].lb())/abs(pixel_y))
+    def CreateContourSep(self,X,eps,img_aux):
+        pixel_x = eps
+        pixel_y = -eps
+        npx = int((X[0].ub() - X[0].lb())/abs(pixel_x))
+        npy = int((X[1].ub() - X[1].lb())/abs(pixel_y))
 
-    #     contours, hyera = cv2.findContours(np.ascontiguousarray(img_aux.copy(), dtype=np.uint8).astype(np.uint8), cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
+        img_out = img_aux.copy()
+        img_in = np.ones((npx, npy), dtype=np.uint8) - img_out
 
-    #     img_out = img_aux.copy()
-    #     img_in = np.ones((npx, npy), dtype=np.uint8) - img_out
+        img_out = img_out.cumsum(0).cumsum(1)
+        img_in = img_in.cumsum(0).cumsum(1)
 
-    #     img_out = img_out.cumsum(0).cumsum(1)
-    #     img_in = img_in.cumsum(0).cumsum(1)
-
-    #     ctcOut = CtcRaster(img_out, X[0].lb(), X[1].ub(), pixel_x, pixel_y)
-    #     ctcIn = CtcRaster(img_in, X[0].lb(), X[1].ub(), pixel_x, pixel_y)
-    #     sep = SepCtcPair(ctcIn, ctcOut)
-    #     return sep
+        ctcOut = CtcRaster(img_out, X[0].lb(), X[1].ub(), pixel_x, pixel_y)
+        ctcIn = CtcRaster(img_in, X[0].lb(), X[1].ub(), pixel_x, pixel_y)
+        sep = SepCtcPair(ctcIn, ctcOut)
+        return sep
 
     def CreateAllSeps(self,X,gamma,gamma_pos,dt,eps):
             if(self.max_wn <= 0):
@@ -453,10 +451,10 @@ class Graph:
             # if(len(self._back_timer) > 0 or len(self._back_timel)):
             #     back_sep = self.CreateBackSeps(X,gamma,gamma_pos,dt,eps)
 
-            # contour_sep = self.CreateContourSep(X,dt,eps,img_aux)
+            contour_sep = self.CreateContourSep(X,eps,img_aux)
 
             # return seps,back_sep,contour_sep
-            return seps,[],[]
+            return seps,[],contour_sep
 
 
 
