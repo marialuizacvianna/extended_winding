@@ -25,7 +25,7 @@ ddx2_robot = "(-14.4*2* t -22.8)"
 #mission time interval
 tdomain = Interval(-1.8,1.8) 
 #time step
-dt=0.01
+dt=0.1
 #Range of visibility on each side
 L = 5.0
 #Area to classify
@@ -54,22 +54,22 @@ robot_size = 2.
 
 ##################### Example 2 #####################
 # Equations for creating trajectory
-# x1_robot = "(5* t-5*sin(10* t))"
-# dx1_robot = "(5-50*cos(10* t))"
-# ddx1_robot = "(500*sin(10* t))"
-# x2_robot = "(2-3*cos(10* t))"
-# dx2_robot = "(30*sin(10* t))"
-# ddx2_robot = "(300*cos(10* t))"
-# #mission time interval
-# tdomain = Interval(-0.02,1.0)
-# #time step
-# dt=0.001
-# #Range of visibility on each side
-# L = 0.5
-# #Area to classify
-# world = IntervalVector([[-6,10],[-5,8]])
-# #size of the robot for visualization
-# robot_size = 1.
+x1_robot = "(5* t-5*sin(10* t))"
+dx1_robot = "(5-50*cos(10* t))"
+ddx1_robot = "(500*sin(10* t))"
+x2_robot = "(2-3*cos(10* t))"
+dx2_robot = "(30*sin(10* t))"
+ddx2_robot = "(300*cos(10* t))"
+#mission time interval
+tdomain = Interval(-0.02,1.0)
+#time step
+dt=0.001
+#Range of visibility on each side
+L = 0.5
+#Area to classify
+world = IntervalVector([[-6,10],[-5,8]])
+#size of the robot for visualization
+robot_size = 1.
 
 ##################### Example with Sweep Back #####################
 # Equations for creating trajectory
@@ -103,6 +103,10 @@ gamma,v = ContourTraj(x_truth,dx_robot,ddx_robot,dt,L,dimension)
 
 ##################### separate gamma into gamma + and gamma - #####################
 gamma_plus,v_plus,yt_right,yt_left = GammaPlus(dt,x_truth,dx_robot,ddx_robot,L,dimension)
+if(len(yt_right) == 0 and len(yt_left) == 0):
+    gamma_plus = TrajectoryVector(gamma)
+    v_plus = v
+
 
 # ##################### Graphics with Vibes #####################
 beginDrawing()
@@ -111,7 +115,7 @@ fig_map.set_properties(100, 100, 800, 800)
 fig_map.axis_limits(world[0].lb(),world[0].ub(),world[1].lb(),world[1].ub())
 fig_map.add_trajectory(x_truth, "x", 0, 1,"red")
 fig_map.add_trajectory(gamma, "blue", 0, 1)
-fig_map.add_trajectory(gamma_plus, "green", 0, 1)
+# fig_map.add_trajectory(gamma_plus, "green", 0, 1)
 fig_map.draw_vehicle(tdomain.ub(), x_truth, robot_size)
 fig_map.show(0.)
 
@@ -139,7 +143,7 @@ idx_list = []
 idx_count = 0
 if (not curve.is_simple):
     intersections = list((curve.intersection(curve)).geoms)
-
+            
     for i in range(len(intersections)):
         intersection = intersections[i]
         
@@ -152,19 +156,19 @@ if (not curve.is_simple):
             found_before = -1
             found_after = -1
 
-            if(i-5 > 0):
-                found_before = i-5
+            if(i-1 > 0):
+                found_before = i-1
                 idx_before = points.index(intersections[found_before].coords[0])
                 point_before_i = (val_x[idx_before],val_y[idx_before])
                 new_v.t_before_i = keys[points.index(point_before_i)]
 
-            if(i + 5 < len(intersections)):
-                found_after = i+5
+            if(i + 1 < len(intersections)):
+                found_after = i+1
                 idx_after = points.index(intersections[found_after].coords[1])
                 point_after_i = (intersections[found_after].coords[1][0],intersections[found_after].coords[1][1])
                 new_v.t_after_i = keys[points.index(point_after_i)]
-                dx = (val_x[idx_after] - new_v.point.pos_x)/abs(val_x[idx_after] - new_v.point.pos_x)
-                dy = (val_y[idx_after] - new_v.point.pos_y)/abs(val_y[idx_after] - new_v.point.pos_y)
+                dx = (val_x[idx_after] - new_v.point.pos_x)#/abs(val_x[idx_after] - new_v.point.pos_x)
+                dy = (val_y[idx_after] - new_v.point.pos_y)#/abs(val_y[idx_after] - new_v.point.pos_y)
                 new_v.di = IntervalVector([[dx,dx],[dy,dy]])
 
             V.append(new_v)
@@ -206,7 +210,8 @@ if (not curve.is_simple):
                     V[idx_v].compute_u()
                 else:
                     it = it+1
-         
+for v in V:
+    v.print_vertice()
 # #####################  Create graph from vertices and update edges ##################### 
 g = Graph(V,idx_list,gamma_plus,yt_right,yt_left)
 g.UpdateEdges()
