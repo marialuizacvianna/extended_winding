@@ -301,7 +301,7 @@ class Graph:
         npy = int((X[1].ub() - X[1].lb())/abs(pixel_y))
 
         seps = []
-        left_interval = (self._tdomain/4.0) + 2*((self._tdomain/4.0).diam())
+        left_interval = (gamma.tdomain()/4.0) + 2*((gamma.tdomain()/4.0).diam())
         for domain in self.back_timel:
             img_aux = np.zeros((npx, npy), dtype=np.int64)
             t = domain.lb()

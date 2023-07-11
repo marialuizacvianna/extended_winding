@@ -73,22 +73,22 @@ robot_size = 1.
 
 ##################### Example with Sweep Back #####################
 # Equations for creating trajectory
-# x1_robot = "(8*cos( t))"
-# dx1_robot = "(-8*sin( t))"
-# ddx1_robot = "(-8*cos( t))"
-# x2_robot = "(5*sin(2* t) - t)"
-# dx2_robot = "(10*cos(2* t) - 1)"
-# ddx2_robot = "(-20*sin(2* t))"
-# #mission time interval
-# tdomain = Interval(0,2*pi)
-# #time step
-# dt=0.01
-# #Range of visibility on each side
-# L = 3.6
-# #Area to classify
-# world = IntervalVector([[-20,20],[-18,12]])
-# #size of the robot for visualization
-# robot_size = 2.
+x1_robot = "(8*cos( t))"
+dx1_robot = "(-8*sin( t))"
+ddx1_robot = "(-8*cos( t))"
+x2_robot = "(5*sin(2* t) - t)"
+dx2_robot = "(10*cos(2* t) - 1)"
+ddx2_robot = "(-20*sin(2* t))"
+#mission time interval
+tdomain = Interval(0,2*pi)
+#time step
+dt=0.01
+#Range of visibility on each side
+L = 3.6
+#Area to classify
+world = IntervalVector([[-20,20],[-18,12]])
+#size of the robot for visualization
+robot_size = 2.
 
 ##################### create trajectory from equations (parametric equations can be replaced by real data) #####################
 # x_truth is the robot's pose (position and orientation)
