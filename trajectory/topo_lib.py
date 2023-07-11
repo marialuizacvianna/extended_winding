@@ -265,6 +265,7 @@ class Graph:
         for img_aux in imgs:
             img_out[img_aux > 0 ] = 1
             img_in[img_aux > 0 ] = 1
+        
         img_out = img_out.cumsum(0).cumsum(1)
         img_in = img_in.cumsum(0).cumsum(1)
         ctcOut = CtcRaster(img_out, X[0].lb(), X[1].ub(), pixel_x, pixel_y)
