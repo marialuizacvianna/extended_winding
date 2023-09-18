@@ -29,24 +29,27 @@ def ConcatenateTubes(x,dt):
     cmt_shift = x[0].tdomain().diam()
 
     for idx in range(1,len(x)):
-        x[idx].shift_tdomain(cmt_shift)
+        # x[idx].shift_tdomain(cmt_shift)
         for i in np.arange(0,x[idx][0].nb_slices()):
-            t = x[idx][0].slice(i).tdomain()
+            t = x[idx][0].slice(i).tdomain() + cmt_shift
             domain |= t
             
-            res[0].set(x[idx][0](t),t)
-            res[1].set(x[idx][1](t),t)
+            res[0].set(x[idx][0](x[idx][0].slice(i).tdomain()),t)
+            res[1].set(x[idx][1](x[idx][0].slice(i).tdomain()),t)
            
         cmt_shift += x[idx].tdomain().diam()
 
     return res
 
 def InverseTube(x,tdomain,dt):
-    res = TubeVector(tdomain,dt,2)
+    res = TubeVector(x)
+    # print("res.nb_slices() = ",res.nb_slices())
+    # print("x.nb_slices() = ",x.nb_slices())
     for i in range(x.nb_slices()):
         t = x[0].slice(x.nb_slices() -1 -i).tdomain()
+        # print("t = ",t)
+        # print('x(t) = ',x(t))
         res.set(IntervalVector([x(t)[0],x(t)[1]]),res[0].slice(i).tdomain())
-
     return res
 
 def ContourTube(x_robot,dx_robot,ddx_robot,dt,L):
@@ -148,10 +151,10 @@ def ContourTube(x_robot,dx_robot,ddx_robot,dt,L):
     # x_rl[0] += x_robot[0][0](tdomain.ub())
     # x_rl = TubeVector(x_rl_lb,x_rl_ub,dt)
     # x_lr = TubeVector(x_lr_lb,x_lr_ub,dt)
-    x_left = InverseTube(x_left,tdomain,dt)
+    # x_left = InverseTube(x_left,tdomain,dt)
     
     
-    return x_right,x_rl,x_left,x_lr,ConcatenateTubes([x_right,x_rl,x_left,x_lr],dt),v
+    return x_right,x_rl,x_left,x_lr,ConcatenateTubes([x_right,x_rl,InverseTube(x_left,tdomain,dt),x_lr],dt),v
 
 
 def ConcatenateTraj(x,dt):

@@ -11,7 +11,7 @@ from shapely.geometry import LineString
 
 
 total_time_begin = datetime.datetime.now()
-dimension = 2
+dimension = 1
 #comment the the examples that should not been used below
 
 ##################### Example from the Article #####################
