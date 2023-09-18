@@ -102,18 +102,34 @@ g.UpdateEdges()
 
 ######
 #Graphics with Vibes 
+# beginDrawing()
+# fig_map = VIBesFigMap("Map")
+# # fig_map.smooth_tube_drawing(True)
+# fig_map.set_tube_max_disp_slices(10000)
+# fig_map.set_properties(100, 100, 800, 800)
+# fig_map.axis_limits(world[0].lb(),world[0].ub(),world[1].lb(),world[1].ub())
+# fig_map.add_trajectory(x_truth, "x", 0, 1,"red")
+# fig_map.add_tube(gamma, "[gamma]", 0, 1)
+# for l in loops:
+#     fig_map.draw_box(gamma_plus(l[0]),"k[]")
+#     fig_map.draw_box(gamma_plus(l[1]),"k[]")
+# fig_map.show(0.)
+
 beginDrawing()
 fig_map = VIBesFigMap("Map")
-# fig_map.smooth_tube_drawing(True)
+fig_map.smooth_tube_drawing(True)
 fig_map.set_tube_max_disp_slices(10000)
 fig_map.set_properties(100, 100, 800, 800)
 fig_map.axis_limits(world[0].lb(),world[0].ub(),world[1].lb(),world[1].ub())
 fig_map.add_trajectory(x_truth, "x", 0, 1,"red")
-fig_map.add_tube(gamma, "[gamma]", 0, 1)
-for l in loops:
-    fig_map.draw_box(gamma_plus(l[0]),"k[]")
-    fig_map.draw_box(gamma_plus(l[1]),"k[]")
-fig_map.show(0.)
+fig_map.add_tube(x, "[x]", 0, 1)
+# fig_map.set_tube_color(x,"red[red]")
+# fig_map.add_tube(gamma, "[gamma]", 0, 1)
+# for l in loops:
+#     fig_map.draw_box(gamma_plus(l[0]),"k[]")
+#     fig_map.draw_box(gamma_plus(l[1]),"k[]")
+fig_map.show(3.)
+
 
 ######
 #Create separators from winding sets

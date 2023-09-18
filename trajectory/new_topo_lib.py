@@ -311,7 +311,6 @@ class Graph:
                 if(t > domain.ub()):
                     t = domain.ub()
 
-
                 xi = gamma(Interval(left_interval.ub()) - Interval(last_t,t))[0]
                 yi = gamma(Interval(left_interval.ub()) - Interval(last_t,t))[1]
 
