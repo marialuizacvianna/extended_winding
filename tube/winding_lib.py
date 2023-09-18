@@ -69,6 +69,10 @@ def ContourTube(x_robot,dx_robot,ddx_robot,dt,L):
     dsin_theta = (ddx_robot[1]*hip - dhip*dx_robot[1])/(hip*hip)
     dcos_theta = (ddx_robot[0]*hip - dhip*dx_robot[0])/(hip*hip)
     
+    # f = TubeVector(tdomain,dt,2)
+    # f[0] = x_robot[0] + L*sin_theta
+    # f[1] = x_robot[0] - L*cos_theta
+
     #right contour
     x_right = TubeVector(tdomain,dt,2)
     v_right = TubeVector(tdomain,dt,2)
@@ -86,6 +90,17 @@ def ContourTube(x_robot,dx_robot,ddx_robot,dt,L):
     v_left[0] = dx_robot[0] - L*dsin_theta
     v_left[1] = dx_robot[1] + L*dcos_theta
     v[2] = InverseTube(v_left,tdomain,dt)
+
+    #right to left
+    x_rl = TubeVector(TrajectoryVector(tdomain,TFunction("("+str(-L)+"+("+str(2*L)+"/"+str((tdomain.ub() - tdomain.lb()))+")*(t-"+str(tdomain.lb())+");"+str(-L)+"+("+str(2*L)+"/"+str((tdomain.ub() - tdomain.lb()))+")*(t-"+str(tdomain.lb())+"))")),dt)
+    x_rl[0] = -x_rl[0]*sin_theta(tdomain.ub()) + x_robot[0](tdomain.ub()) #+ L*sin_theta
+    x_rl[1] = x_rl[1]*cos_theta(tdomain.ub()) +  x_robot[1](tdomain.ub())# + L*sin_theta
+
+    #left to right
+    x_lr = TubeVector(TrajectoryVector(tdomain,TFunction("("+str(-L)+"+("+str(2*L)+"/"+str((tdomain.ub() - tdomain.lb()))+")*(t-"+str(tdomain.lb())+");"+str(-L)+"+("+str(2*L)+"/"+str((tdomain.ub() - tdomain.lb()))+")*(t-"+str(tdomain.lb())+"))")),dt)
+    x_lr[0] = x_lr[0]*sin_theta(tdomain.lb()) + x_robot[0](tdomain.lb()) #+ L*sin_theta
+    x_lr[1] = -x_lr[1]*cos_theta(tdomain.lb()) +  x_robot[1](tdomain.lb())# + L*sin_theta
+   
 
     alpha0 = (((x_left[0](tdomain.ub()).ub() - x_right[0](tdomain.ub()).ub())/(tdomain.ub() - tdomain.lb())))
     beta0 = (x_right[0](tdomain.ub()).ub())
@@ -131,12 +146,12 @@ def ContourTube(x_robot,dx_robot,ddx_robot,dt,L):
     # x_rl = TubeVector(TrajectoryVector(tdomain, TFunction("("+x1_robot+";"+x2_robot+")")),dt)
     # x_rl[0] += x_robot[0][0](tdomain.ub())
     # x_rl[0] += x_robot[0][0](tdomain.ub())
-    x_rl = TubeVector(x_rl_lb,x_rl_ub,dt)
-    x_lr = TubeVector(x_lr_lb,x_lr_ub,dt)
+    # x_rl = TubeVector(x_rl_lb,x_rl_ub,dt)
+    # x_lr = TubeVector(x_lr_lb,x_lr_ub,dt)
     x_left = InverseTube(x_left,tdomain,dt)
     
     
-    return ConcatenateTubes([x_right,x_rl,x_left,x_lr],dt),v
+    return x_right,x_rl,x_left,x_lr,ConcatenateTubes([x_right,x_rl,x_left,x_lr],dt),v
 
 
 def ConcatenateTraj(x,dt):
