@@ -15,14 +15,14 @@ total_time_begin = datetime.datetime.now()
 
 ##################### Example from the Article #####################
 # Equations for creating trajectory
-x1_robot = "(-9.6* t^2  + 11.4*(0.5* t^3 - t) +30)"
-dx1_robot = "(-19.2* t + 17.1* t^2 - 11.4)"
-ddx1_robot = "(-19.2 + 2*17.1* t)"
-x2_robot = "(-9.6*(0.5* t^3 - t) - 11.4* t^2 + 30)"
-dx2_robot = "(-14.4* t^2 +9.6 -22.8* t)"
-ddx2_robot = "(-14.4*2* t -22.8)"
+x1_robot = "(-9.6* (t-1.8)^2  + 11.4*(0.5* (t-1.8)^3 - (t-1.8)) +30)"
+dx1_robot = "(-19.2* (t-1.8) + 17.1* (t-1.8)^2 - 11.4)"
+ddx1_robot = "(-19.2 + 2*17.1* (t-1.8))"
+x2_robot = "(-9.6*(0.5* (t-1.8)^3 - (t-1.8)) - 11.4* (t-1.8)^2 + 30)"
+dx2_robot = "(-14.4* (t-1.8)^2 +9.6 -22.8* (t-1.8))"
+ddx2_robot = "(-14.4*2* (t-1.8) -22.8)"
 #mission time interval
-tdomain = Interval(-1.8,1.8) 
+tdomain = Interval(0,3.6) 
 #time step
 dt=0.01
 #Range of visibility on each side
@@ -30,26 +30,26 @@ L = 5.0
 #Area to classify
 world = IntervalVector([[-20,40],[-25,40]]) 
 #size of the robot for visualization
-robot_size = 2.
+robot_size = 3.
 
 ##################### Example with Sweep Back #####################
 # Equations for creating trajectory
-x1_robot = "(8*cos( t))"
-dx1_robot = "(-8*sin( t))"
-ddx1_robot = "(-8*cos( t))"
-x2_robot = "(5*sin(2* t) - t)"
-dx2_robot = "(10*cos(2* t) - 1)"
-ddx2_robot = "(-20*sin(2* t))"
-#mission time interval
-tdomain = Interval(0,2*pi)
-#time step
-dt=0.01
-#Range of visibility on each side
-L = 3.6
-#Area to classify
-world = IntervalVector([[-20,20],[-18,12]])
-#size of the robot for visualization
-robot_size = 2.
+# x1_robot = "(8*cos( t))"
+# dx1_robot = "(-8*sin( t))"
+# ddx1_robot = "(-8*cos( t))"
+# x2_robot = "(5*sin(2* t) - t)"
+# dx2_robot = "(10*cos(2* t) - 1)"
+# ddx2_robot = "(-20*sin(2* t))"
+# #mission time interval
+# tdomain = Interval(0,2*pi)
+# #time step
+# dt=0.01
+# #Range of visibility on each side
+# L = 3.6
+# #Area to classify
+# world = IntervalVector([[-20,20],[-18,12]])
+# #size of the robot for visualization
+# robot_size = 2.
 
 ##################### Example 2 #####################
 # Equations for creating trajectory
@@ -99,7 +99,6 @@ x_right,x_rl,x_left,x_lr,gamma,v = ContourTube(x,v_robot,a_robot,dt,L)
 
 ######
 #separate gamma into gamma + and gamma 
-#TODO
 d_theta = ((a_robot[1]*v_robot[0]) - (a_robot[0]*v_robot[1]))/(v_robot[0]*v_robot[0] + v_robot[1]*v_robot[1])
 sin_theta = v_robot[1]/sqrt(v_robot[0]*v_robot[0] + v_robot[1]*v_robot[1])
 cos_theta = v_robot[0]/sqrt(v_robot[0]*v_robot[0] + v_robot[1]*v_robot[1])
@@ -231,30 +230,31 @@ fig_map = VIBesFigMap("Map")
 fig_map.smooth_tube_drawing(True)
 fig_map.set_tube_max_disp_slices(10000)
 fig_map.set_properties(100, 100, 800, 800)
-fig_map.axis_limits(-13,13,-16,9)
+# fig_map.axis_limits(-13,13,-16,9)
+fig_map.axis_limits(world[0].lb(),world[0].ub(),world[1].lb(),world[1].ub())
 # fig_map.add_trajectory(x_truth, "x", 0, 1,"red")
-# fig_map.add_tube(x, "[x]", 0, 1)
+fig_map.add_tube(x, "[x]", 0, 1)
 
 
 # fig_map.add_tube(x_right, "[x_right]", 0, 1)
 # fig_map.add_tube(x_right_plus, "[x_right_plus]", 0, 1)
-# fig_map.set_tube_color(x_right_plus,"darkGray[darkGray]")
+# fig_map.set_tube_color(x_right,"darkGray[darkGray]")
 
 # fig_map.add_tube(x_left, "[x_left]", 0, 1)
 # fig_map.add_tube(x_left_plus, "[x_left_plus]", 0, 1)
-# fig_map.set_tube_color(x_left_plus,"darkGray[darkGray]")
+# fig_map.set_tube_color(x_left,"darkGray[darkGray]")
 
 # fig_map.add_tube(x_rl, "[x_rl]", 0, 1)
 # fig_map.set_tube_color(x_rl,"darkGray[darkGray]")
 # fig_map.add_tube(x_lr, "[x_lr]", 0, 1)
 # fig_map.set_tube_color(x_lr,"darkGray[darkGray]")
 
-# fig_map.add_tube(gamma_plus, "[gamma_plus]", 0, 1)
-# fig_map.set_tube_color(gamma_plus,"darkGray[darkGray]")
+fig_map.add_tube(gamma_plus, "[gamma_plus]", 0, 1)
+fig_map.set_tube_color(gamma_plus,"darkGray[darkGray]")
 
-for i in range(len(list_gamma_minus)):
-    fig_map.add_tube(list_gamma_minus[i], "[list_gamma_minus]_"+str(i), 0, 1)
-    fig_map.set_tube_color(list_gamma_minus[i],"darkGray[darkGray]")
+# for i in range(len(list_gamma_minus)):
+#     fig_map.add_tube(list_gamma_minus[i], "[list_gamma_minus]_"+str(i), 0, 1)
+#     fig_map.set_tube_color(list_gamma_minus[i],"darkGray[darkGray]")
 
 # fig_map.add_tube(x_left, "[x_left]", 0, 1)
 # fig_map.add_tube(x_rl, "[x_rl]", 0, 1)
@@ -270,32 +270,11 @@ for i in range(len(list_gamma_minus)):
 # for l in loops:
 #     fig_map.draw_box(gamma_plus(l[0]),"k[]")
 #     fig_map.draw_box(gamma_plus(l[1]),"k[]")
-# fig_map.draw_vehicle([x_truth[0](tdomain.ub()),x_truth[1](tdomain.ub()),atan2(dx_robot[1](tdomain.ub()),dx_robot[0](tdomain.ub()))], robot_size)
+fig_map.draw_vehicle([x_truth[0](tdomain.ub()),x_truth[1](tdomain.ub()),atan2(dx_robot[1](tdomain.ub()),dx_robot[0](tdomain.ub()))], robot_size)
 fig_map.show(robot_size)
 
-fig_tube = VIBesFigMap("Tube")
-fig_tube.smooth_tube_drawing(True)
-fig_tube.set_tube_max_disp_slices(10000)
-fig_tube.set_properties(100, 100, 800, 800)
-fig_tube.axis_limits(world[0].lb(),world[0].ub(),world[1].lb(),world[1].ub())
-fig_tube.add_trajectory(x_truth, "x", 0, 1,"red")
-fig_tube.add_tube(gamma, "[gamma]", 0, 1)
-fig_tube.add_tube(gamma_plus, "[gamma_plus]", 0, 1)
-for i in range(len(list_gamma_minus)):
-    fig_tube.add_tube(list_gamma_minus[i], "[list_gamma_minus]_"+str(i), 0, 1)
-    fig_tube.set_tube_color(list_gamma_minus[i],"green[green]")
-    
-# fig_map.add_tube(x_right, "[x_right]", 0, 1)
-# fig_map.add_tube(x_left, "[x_left]", 0, 1)
-# fig_map.add_tube(x_rl, "[x_rl]", 0, 1)
-# fig_map.add_tube(x_lr, "[x_lr]", 0, 1)
-# fig_map.set_tube_color(x_right,"k[k]")
-fig_tube.set_tube_color(gamma_plus,"red[red]")
-# fig_map.add_tube(gamma, "[gamma]", 0, 1)
-# for l in loops:
-#     fig_map.draw_box(gamma_plus(l[0]),"k[]")
-#     fig_map.draw_box(gamma_plus(l[1]),"k[]")
-fig_tube.show(robot_size)
+
+
 
 fig_fpr = VIBesFigTube("FPR")
 # fig_fpr.smooth_tube_drawing(True)
@@ -383,7 +362,7 @@ fig_fpr.show()
 #             fig.draw_box(X,"gray[blue]")
 #     count += 1
 
-# vibes.endDrawing()
+vibes.endDrawing()
 
 # fig_siv = VIBesFigMap("SIVIA")
 # fig_siv.set_properties(100, 100, 800, 800)
@@ -442,6 +421,4 @@ fig_fpr.show()
 # total_time_end = datetime.datetime.now()
 
 # print('total time = '+str((total_time_end - total_time_begin).total_seconds())+"s")
-
-
 
