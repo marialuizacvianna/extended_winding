@@ -198,7 +198,7 @@ print("len(list_gamma_minus) = ",len(list_gamma_minus))
 ######
 #find self-intersections in gamma_plus
 tplane = TPlane(gamma_plus.tdomain())
-tplane.compute_detections(5*dt, gamma_plus)
+tplane.compute_detections(dt, gamma_plus)
 tplane.compute_proofs(gamma_plus)
 loops = tplane.proven_loops()
 
@@ -249,12 +249,12 @@ fig_map.axis_limits(-13,13,-16,9)
 # fig_map.add_tube(x_lr, "[x_lr]", 0, 1)
 # fig_map.set_tube_color(x_lr,"darkGray[darkGray]")
 
-# fig_map.add_tube(gamma_plus, "[gamma_plus]", 0, 1)
+fig_map.add_tube(gamma_plus, "[gamma_plus]", 0, 1)
 # fig_map.set_tube_color(gamma_plus,"darkGray[darkGray]")
 
-for i in range(len(list_gamma_minus)):
-    fig_map.add_tube(list_gamma_minus[i], "[list_gamma_minus]_"+str(i), 0, 1)
-    fig_map.set_tube_color(list_gamma_minus[i],"darkGray[darkGray]")
+# for i in range(len(list_gamma_minus)):
+#     fig_map.add_tube(list_gamma_minus[i], "[list_gamma_minus]_"+str(i), 0, 1)
+#     fig_map.set_tube_color(list_gamma_minus[i],"darkGray[darkGray]")
 
 # fig_map.add_tube(x_left, "[x_left]", 0, 1)
 # fig_map.add_tube(x_rl, "[x_rl]", 0, 1)
@@ -267,9 +267,9 @@ for i in range(len(list_gamma_minus)):
 # fig_map.set_tube_color(x_right,"k[k]")
 # fig_map.set_tube_color(x_left,"red[red]")
 # fig_map.add_tube(gamma, "[gamma]", 0, 1)
-# for l in loops:
-#     fig_map.draw_box(gamma_plus(l[0]),"k[]")
-#     fig_map.draw_box(gamma_plus(l[1]),"k[]")
+for l in loops:
+    fig_map.draw_box(gamma_plus(l[0]),"k[]")
+    fig_map.draw_box(gamma_plus(l[1]),"k[]")
 # fig_map.draw_vehicle([x_truth[0](tdomain.ub()),x_truth[1](tdomain.ub()),atan2(dx_robot[1](tdomain.ub()),dx_robot[0](tdomain.ub()))], robot_size)
 fig_map.show(robot_size)
 
