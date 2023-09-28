@@ -18,13 +18,14 @@ def ConcatenateTubes(x,dt):
         total_time += x[i].tdomain().diam()
        
     res = TubeVector(Interval(x[0].tdomain().lb(),x[0].tdomain().lb()+total_time),dt,2)
+
     domain = x[0][0].slice(0).tdomain()
     for i in range(x[0][0].nb_slices()):
         t = x[0][0].slice(i).tdomain()
         domain |= t
         res[0].set(x[0][0](t),t)
         res[1].set(x[0][1](t),t)
-
+        
     cmt_shift = x[0].tdomain().diam()
 
     for idx in range(1,len(x)):
@@ -32,6 +33,7 @@ def ConcatenateTubes(x,dt):
         for i in np.arange(0,x[idx][0].nb_slices()):
             t = x[idx][0].slice(i).tdomain() + cmt_shift
             domain |= t
+            
             res[0].set(x[idx][0](x[idx][0].slice(i).tdomain()),t)
             res[1].set(x[idx][1](x[idx][0].slice(i).tdomain()),t)
            
