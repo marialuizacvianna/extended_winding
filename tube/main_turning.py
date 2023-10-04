@@ -97,6 +97,7 @@ ctc.deriv.contract(x, v_robot)
 #v is a vector with the speed on each of the four parts that are concatenated to create the sensor's contour
 x_right,x_rl,x_left,x_lr,gamma,v = ContourTube(x,v_robot,a_robot,dt,L) 
 x_left = InverseTube(x_left)
+
 ######
 #Graphics with Vibes 
 
@@ -106,59 +107,36 @@ fig_map.smooth_tube_drawing(True)
 fig_map.set_tube_max_disp_slices(10000)
 fig_map.set_properties(100, 100, 800, 800)
 fig_map.axis_limits(-13,13,-16,9)
-# fig_map.add_trajectory(x_truth, "x", 0, 1,"red")
-# fig_map.add_tube(x, "[x]", 0, 1)
 
-fig_map.draw_box(IntervalVector([[-0.2,0.2],[0,20]]) ,"red[red]")
+#Compute winding number for this point:
+# point = IntervalVector([[6.5,7],[10,11]])
+# point = IntervalVector([[9,12],[6,8]])
+point =  IntervalVector([[9,12],[6,8]])
 
-
-point = IntervalVector([[8,8],[11,11]]) 
 x_list = [x_right - point,x_rl - point,x_left - point,x_lr - point]
 
+fig_map.add_tube(x_rl-point, "[x_rl]", 0, 1)
+
+fig_map.add_tube(x_lr-point, "[x_lr]", 0, 1)
+
 fig_map.add_tube(x_right-point, "[x_right]", 0, 1)
-# fig_map.add_tube(x_right_plus, "[x_right_plus]", 0, 1)
-# fig_map.set_tube_color(x_right_plus,"darkGray[darkGray]")
+
 
 fig_map.add_tube(x_left-point, "[x_left]", 0, 1)
-# fig_map.add_tube(x_left_plus, "[x_left_plus]", 0, 1)
-# fig_map.set_tube_color(x_left_plus,"darkGray[darkGray]")
 
-fig_map.add_tube(x_rl-point, "[x_rl]", 0, 1)
-# fig_map.set_tube_color(x_rl,"darkGray[darkGray]")
-fig_map.add_tube(x_lr-point, "[x_lr]", 0, 1)
-# fig_map.set_tube_color(x_lr,"darkGray[darkGray]")
 
-# fig_map.add_tube(gamma, "[gamma]", 0, 1)
-# fig_map.set_tube_color(gamma_plus,"darkGray[darkGray]")
 
-# for i in range(len(list_gamma_minus)):
-#     fig_map.add_tube(list_gamma_minus[i], "[list_gamma_minus]_"+str(i), 0, 1)
-#     fig_map.set_tube_color(list_gamma_minus[i],"darkGray[darkGray]")
 
-# fig_map.add_tube(x_left, "[x_left]", 0, 1)
-# fig_map.add_tube(x_rl, "[x_rl]", 0, 1)
-# fig_map.add_tube(x_lr, "[x_lr]", 0, 1)
-# fig_map.draw_vehicle([x_truth[0](tdomain.ub()),x_truth[1](tdomain.ub()),atan2(dx_robot[1](tdomain.ub()),dx_robot[0](tdomain.ub()))], 2)
-# fig_map.draw_box(x(tdomain.ub()),"red[]")
-# fig_map.draw_box(x_rl(tdomain.lb()),"k[]")
-# fig_map.draw_box(x_rl(tdomain.ub()),"k[]")
-# fig_map.add_tube(x_lr, "[x_lr]", 0, 1)
-# fig_map.set_tube_color(x_right,"k[k]")
-# fig_map.set_tube_color(x_left,"red[red]")
-# fig_map.add_tube(gamma, "[gamma]", 0, 1)
-# for l in loops:
-#     fig_map.draw_box(gamma_plus(l[0]),"k[]")
-#     fig_map.draw_box(gamma_plus(l[1]),"k[]")
-# fig_map.draw_vehicle([x_truth[0](tdomain.ub()),x_truth[1](tdomain.ub()),atan2(dx_robot[1](tdomain.ub()),dx_robot[0](tdomain.ub()))], robot_size)
 fig_map.show()
-
+fig_map.draw_box(IntervalVector([[-0.2,0.2],[0,100]]) ,"red[red]")
+# fig_map.draw_box(IntervalVector([[9,12],[6,8]]) ,"k[]")
 
 cm = Interval(0)
 D =  IntervalVector([[0,0],[0,oo]]) 
 zero_int = IntervalVector([[0,0],[0,0]]) 
 last_non_inter = True
 last_non_zero = True
-last_box_non_inter = True
+last_box_non_inter = IntervalVector([[0,0],[0,0]]) 
 last_box_non_inter_cm = [0,0]
 last_box = IntervalVector([[0,0],[0,0]]) 
 cumul_d = Interval(0)
@@ -171,14 +149,14 @@ for x,dx in zip(x_list,v):
     while (len(t_boxes) > 0 ):
         t_s = t_boxes.pop(0)
         box = x(t_s)
+        bis = False
         
-        print('cm = ',cm)
         dbox = dx(t_s)
         if((D & box).is_empty() and last_non_inter): 
             last_box_non_inter = box
             last_non_zero = True 
             last_non_inter = True
-            last_box_non_inter_cm = cm
+            last_box_non_inter_cm = Interval(cm)
             init= True
             print('rule1')
             fig_map.draw_box(box,"green[]")
@@ -231,8 +209,9 @@ for x,dx in zip(x_list,v):
                 t2 = Interval(t_s.lb() + t_s.diam()/2., t_s.ub())
                 t_boxes.insert(0,t2)
                 t_boxes.insert(0,t1)
-                print('bisected')
-                fig_map.draw_box(box,"red[]")
+                # print('bisected')
+                bis = True
+                # fig_map.draw_box(box,"red[]")
             
             
         # elif(zero_int.is_subset(box) ): 
@@ -244,8 +223,11 @@ for x,dx in zip(x_list,v):
         
 
         
-        a = input('').split(" ")[0]
-        print(a)
+        if(not bis):
+            print('cm = ',cm)
+            a = input('').split(" ")[0]
+            print(a)
+            fig_map.draw_box(box,"red[]")
 
 print("cm = ",cm)
     # if (0 ) 
