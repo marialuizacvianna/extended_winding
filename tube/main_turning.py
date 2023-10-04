@@ -109,18 +109,23 @@ fig_map.axis_limits(-13,13,-16,9)
 # fig_map.add_trajectory(x_truth, "x", 0, 1,"red")
 # fig_map.add_tube(x, "[x]", 0, 1)
 
+fig_map.draw_box(IntervalVector([[-0.2,0.2],[0,20]]) ,"red[red]")
 
-fig_map.add_tube(x_right, "[x_right]", 0, 1)
+
+point = IntervalVector([[8,8],[11,11]]) 
+x_list = [x_right - point,x_rl - point,x_left - point,x_lr - point]
+
+fig_map.add_tube(x_right-point, "[x_right]", 0, 1)
 # fig_map.add_tube(x_right_plus, "[x_right_plus]", 0, 1)
 # fig_map.set_tube_color(x_right_plus,"darkGray[darkGray]")
 
-fig_map.add_tube(x_left, "[x_left]", 0, 1)
+fig_map.add_tube(x_left-point, "[x_left]", 0, 1)
 # fig_map.add_tube(x_left_plus, "[x_left_plus]", 0, 1)
 # fig_map.set_tube_color(x_left_plus,"darkGray[darkGray]")
 
-fig_map.add_tube(x_rl, "[x_rl]", 0, 1)
+fig_map.add_tube(x_rl-point, "[x_rl]", 0, 1)
 # fig_map.set_tube_color(x_rl,"darkGray[darkGray]")
-fig_map.add_tube(x_lr, "[x_lr]", 0, 1)
+fig_map.add_tube(x_lr-point, "[x_lr]", 0, 1)
 # fig_map.set_tube_color(x_lr,"darkGray[darkGray]")
 
 # fig_map.add_tube(gamma, "[gamma]", 0, 1)
@@ -147,26 +152,89 @@ fig_map.add_tube(x_lr, "[x_lr]", 0, 1)
 # fig_map.draw_vehicle([x_truth[0](tdomain.ub()),x_truth[1](tdomain.ub()),atan2(dx_robot[1](tdomain.ub()),dx_robot[0](tdomain.ub()))], robot_size)
 fig_map.show()
 
-x_list = [x_right,x_rl,x_left,x_lr]
 
 cm = Interval(0)
 D =  IntervalVector([[0,0],[0,oo]]) 
 zero_int = IntervalVector([[0,0],[0,0]]) 
-for x in x_list:
-    t_s = x.tdomain()
-    print('t_s = ',t_s)
-    t_boxes = [t_s]
+last_non_inter = True
+last_non_zero = True
+last_box_non_inter = True
+last_box_non_inter_cm = [0,0]
+last_box = IntervalVector([[0,0],[0,0]]) 
+cumul_d = Interval(0)
 
+init = False
+
+
+for x,dx in zip(x_list,v):
+    t_boxes = [x.tdomain()]
     while (len(t_boxes) > 0 ):
-        box = x(t_boxes.pop(0))
-
-        if((D & box).is_empty()): 
-            last_non_inter = box
-        elif(not (D & box).is_empty() and not zero_int.is_subset(box)): 
+        t_s = t_boxes.pop(0)
+        box = x(t_s)
+        
+        print('cm = ',cm)
+        dbox = dx(t_s)
+        if((D & box).is_empty() and last_non_inter): 
+            last_box_non_inter = box
+            last_non_zero = True 
+            last_non_inter = True
+            last_box_non_inter_cm = cm
+            init= True
+            print('rule1')
+            fig_map.draw_box(box,"green[]")
+            last_box = box
+        elif(init and not (D & box).is_empty() and not zero_int.is_subset(box)):
+            last_non_zero = True 
+            last_non_inter = False
+            print("last_box = last_box")
             if(last_box[0].lb() > 0):
                 cm += Interval(0,1)
+                print("inside")
             elif(last_box[0].ub() < 0):
                 cm += Interval(-1,0)
+            print('rule2')
+            fig_map.draw_box(box,"green[]")
+            last_box = box
+        elif(init and t_s.diam() <= dt  and zero_int.is_subset(box) and (not Interval(0).is_subset(dbox[0]) or not Interval(0).is_subset(dbox[1])) and last_non_zero): 
+            last_non_zero = False
+            last_non_inter = False
+            cm = last_box_non_inter_cm + Interval(-1,1)
+            cumul_d = dbox
+            print('rule3')
+            fig_map.draw_box(box,"green[]")
+            last_box = box
+        elif(init and (D & box).is_empty() and not last_non_inter): 
+            last_non_zero = True
+            last_non_inter = True
+            if(last_box_non_inter[0].lb() < 0 and box[0].lb() > 0 ):
+                cm = Interval(cm.lb(),cm.ub()-1)
+            elif(last_box_non_inter[0].lb() > 0 and box[0].lb() < 0 ):
+                cm = Interval(cm.lb()+1,cm.ub())
+            last_box_non_inter = box
+            last_box_non_inter_cm = cm
+            print('rule4')
+            fig_map.draw_box(box,"green[]")
+            last_box = box
+        elif(init and t_s.diam() <= dt and zero_int.is_subset(box) and (not Interval(0).is_subset(dbox[0]) or not Interval(0).is_subset(dbox[1])) and not last_non_zero): 
+            last_non_zero = False
+            last_non_inter = False
+            cumul_d |= dbox
+            if( Interval(0).is_subset(cumul_d[0]) and Interval(0).is_subset(dbox[1])):
+                cm = cm + Interval(-1,1)
+                cumul = dbox
+            print('rule5')
+            fig_map.draw_box(box,"green[]")
+            last_box = box
+        else:
+            if(t_s.diam() > dt):
+                t1 = Interval(t_s.lb(),t_s.lb() + t_s.diam()/2. )
+                t2 = Interval(t_s.lb() + t_s.diam()/2., t_s.ub())
+                t_boxes.insert(0,t2)
+                t_boxes.insert(0,t1)
+                print('bisected')
+                fig_map.draw_box(box,"red[]")
+            
+            
         # elif(zero_int.is_subset(box) ): 
         #     if(last_box[0].lb() > 0):
         #         cm += Interval(0,1)
@@ -175,7 +243,11 @@ for x in x_list:
 
         
 
-        last_box = box
+        
+        a = input('').split(" ")[0]
+        print(a)
+
+print("cm = ",cm)
     # if (0 ) 
 
 
