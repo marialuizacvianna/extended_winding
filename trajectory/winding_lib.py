@@ -138,7 +138,6 @@ def ContourTraj(x_robot,dx_robot,ddx_robot,dt,L,dim):
         d_xlr = TrajectoryVector(tdomain, TFunction("("+dx_cir+";"+dy_cir+")"))
         v[3] = d_xlr    
     
-    
     return ConcatenateTraj([x_right,x_rl,InverseTraj(x_left,dt),x_lr],dt),v
 
 def ContourRL(x_right,dx_right,x_left,dx_left,dt,L,dim):

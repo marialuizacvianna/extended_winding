@@ -7,176 +7,199 @@ from math import ceil,floor
 import cv2
 import matplotlib.pyplot as plt
 
+class Point:
+    def __init__(self,_pos_x,_pos_y):
+        self.pos_x = _pos_x
+        self.pos_y = _pos_y
+    def coords(self):
+        return (self.pos_x,self.pos_y)
+
+
+class Vertice:
+    def __init__(self,_pos_x,_pos_y,_nb):
+        self.point = Point(_pos_x,_pos_y)
+        self.t_before_i = 0
+        self.t_after_i = 0
+        self.t_before_f = 0
+        self.t_after_f = 0
+        self.di = 0
+        self.df = 0
+        self.u = 0
+        self.nb = _nb
+        self.e_i= []
+        self.e_f = []
+
+    def compute_u(self):
+        dir = self.di[0]*self.df[1] - self.df[0]*self.di[1]
+
+        if(dir.lb() > 0):
+            self.u = -1
+        elif(dir.ub() < 0):
+            self.u = 1
+
+    def print_vertice(self):
+        print(f"pos_x = {self.point.pos_x}, pos_y = {self.point.pos_y}, di = {self.di}, df = {self.df}, u = {self.u}")
+        print(f"self.t_before_i = {self.t_before_i}, self.t_after_i = {self.t_after_i},self.t_before_f = {self.t_before_f}, self.t_after_f = {self.t_after_f}")
+  
+
+class Edge:
+    def __init__(self,_traj,_v_i,_v_f,_u,_nb):
+        self.traj = _traj
+        self.l_v = 0 #left value
+        self.r_v = 0 #right value
+        self.v_i = _v_i #initial vertice
+        self.v_f = _v_f  #final vertice
+        self.u = _u #update indice
+        self.nb = _nb
+
 
 
 class Graph:
-    def __init__(self,inter_list,tdomain,d_list,back_timer,back_timel):
-        self._n_v = len(inter_list)
-        self._n_e = 2*self._n_v
-        self._V = []
-        self._E = []
-        self._tdomain = tdomain
-        self._min_wn = float('inf')
-        self._max_wn = 0
-        self._update = 0
-        self._back_timer = back_timer
-        self._back_timel = back_timel
-        self._v_count = 0
-        self._e_count = 0
+    def __init__(self,_V,idx_list,gamma,_back_timer,_back_timel):
+        self.V = _V
+        self.min_wn = float('inf')
+        self.max_wn = 0
+        self.E = []
+        idx_used = []
+        count_edge = 0
+        self.back_timer = _back_timer
+        self.back_timel = _back_timel
 
-        if(self._n_v > 0):
-            for i in range(self._n_v):
-                self.AddVertice(inter_list[i][0],inter_list[i][1],d_list[0][i],d_list[1][i])
-        else:
+        for i in range(len(idx_list) - 1):
+            idx = idx_list[i]
+            next_idx = idx_list[i+1]
+            u = -self.V[idx].u
+            t_begin = 0
+            t_end = 0
+            
+            if(idx not in idx_used):
+                idx_used.append(idx)
+                u = self.V[idx].u
+                t_begin = self.V[idx].t_before_i
+            else:
+                t_begin = self.V[idx].t_before_f
+
+            if(next_idx not in idx_used):
+                t_end = self.V[next_idx].t_after_i
+            else:
+                t_end = self.V[next_idx].t_after_f  
+            
+            new_t = Interval(t_begin,t_end)
+            new_traj = TrajectoryVector(gamma)
+            traj = new_traj.truncate_tdomain(new_t)
+            new_e = Edge([traj],self.V[idx],self.V[next_idx],u,count_edge)
+            self.V[idx].e_i.append(count_edge)
+            self.V[next_idx].e_f.append(count_edge)
+            self.E.append(new_e)
+            count_edge+= 1
+
+        if(len(self.V) == 0):
             self._min_wn = 1
             self._max_wn = 1
-            self._n_v = 1
-            self._n_e = 1
-            self.AddVertice(Interval(tdomain.lb()),Interval(tdomain.ub()),[Interval(0),Interval(1)],[Interval(1),Interval(0)])
+            traj = TrajectoryVector(gamma)
+            pos_x = traj(gamma.tdomain().lb())[0]
+            pos_y = traj(gamma.tdomain().lb())[1]
+            new_v = Vertice(pos_x,pos_y,0)
+            new_e = Edge([traj],new_v,new_v,1,count_edge)
+            self.E.append(new_e)
+            self.V.append(new_v)
+            self.V[0].e_i.append(count_edge)
+            self.V[0].e_f.append(count_edge)
+            count_edge+= 1
+        else:
+            #last traj
+            idx = idx_list[-1]
+            next_idx = idx_list[0]
+            u = -self.V[idx].u
+            t_begin = self.V[idx].t_before_f
+            t_end = self.V[next_idx].t_after_i
 
-        self.EdgesFromVertices()
+            new_t_1 = Interval(t_begin,gamma.tdomain().ub())
+            new_t_2 = Interval(gamma.tdomain().lb(),t_end)
+            new_traj_1 = TrajectoryVector(gamma)
+            new_traj_2 = TrajectoryVector(gamma)
+            traj_1 = new_traj_1.truncate_tdomain(new_t_1)
+            traj_2 = new_traj_2.truncate_tdomain(new_t_2)
+            new_e = Edge([traj_1,traj_2],self.V[idx],self.V[next_idx],u,count_edge)
+            self.V[idx].e_i.append(count_edge)
+            self.V[next_idx].e_f.append(count_edge)
+            self.E.append(new_e)
+            count_edge+= 1
+
+
 
     def print_graph(self):
-        for i in range(self._n_v):
-            print("_V[i]._tdomain = ", self._V[i]._tdomain)
-
         print("edges = ")
-        for i in range(self._n_e):
-            print("i = ",i)
-            print("g._E[i]._T = ",self._E[i]._T)
-            print("g._E[i]._l_v = ", self._E[i]._l_v)
-            print("g._E[i]._r_v = ", self._E[i]._r_v)
-            print("g._E[i]._u = ", self._E[i]._u)
-
-    def EdgesFromVertices(self):
-        V_dict = dict()
-        for v in self._V:
-            V_dict[v._t_i.lb()] = v
-            V_dict[v._t_f.lb()] = v
-
-        V_keys = list(V_dict.keys())
-        V_keys.sort()
-
-        if(self._n_e > 1):
-            for i in range(self._n_e):
-                vi = V_dict[V_keys[i]]
-                vf = 0
-                t = Interval(0)
-                if(i == self._n_e - 1):
-                    t = [Interval(V_dict[V_keys[len(V_keys) - 1]]._t_f.lb(),self._tdomain.ub()),Interval(self._tdomain.lb(),V_dict[V_keys[0]]._t_i.ub())]
-                    vf = V_dict[V_keys[0]]
-                else:
-                    t_i = 0
-                    t_f = 0
-                
-                    t_i = V_keys[i]
-                    if(V_dict[V_keys[i+1]]._t_i.lb() == V_keys[i+1]):
-                        t_f = V_dict[V_keys[i+1]]._t_i.ub()
-                    else:
-                        t_f = V_dict[V_keys[i+1]]._t_f.ub()
-                
-                    t = [Interval(t_i,t_f)]
-                    vf = V_dict[V_keys[i+1]]
-
-                dir = vi._d_i[0]*vi._d_f[1] - vi._d_f[0]*vi._d_i[1]
-            
-                if(not((vi._t_f&Interval(t[0].lb())).is_empty())):
-                    dir = -dir
-
-                new_e = self.AddEdge(t,vi,vf,dir)
-
-
-                self._V[vi._nb]._e_i.append(new_e)
-                self._V[vf._nb]._e_f.append(new_e)
-
-        else:
-            new_e = self.AddEdge([self._tdomain],self._V[0],self._V[0],Interval(-1))
-            self._V[0]._e_i.append(new_e)
-            self._V[0]._e_f.append(new_e)
-
-
-    def AddVertice(self,t_1,t_2,d_i,d_f):
-        new_v = Vertice(t_1,t_2,d_i,d_f,self._v_count)
-        self._V.append(new_v)
-        self._v_count += 1
-        return new_v
-
-    def AddEdge(self,t,v_1,v_2,dir):
-        new_e = Edge(t,v_1,v_2,self._e_count)
-        if(dir.lb() > 0):
-            new_e._u = -1
-        elif(dir.ub() < 0):
-            new_e._u = 1
-       
-        self._E.append(new_e)
-        self._e_count += 1
-        return new_e
+        for e in self.E:
+            print("l_v = ", e.l_v)
+            print("r_v = ", e.r_v)
+            print("u = ", e.u)
 
     def UpdateEdges(self):
         min_val = 0
-        for i in range(self._n_e):
-            e = self._E[i]
+        for i in range(len(self.E)):
+            e = self.E[i]
            
             if(i == 0):
-                if(e._u == 1):
-                    e._l_v = 1
+                if(e.u == 1):
+                    e.l_v = 1
                 else:
-                    e._r_v = -1
+                    e.r_v = -1
                     min_val = -1
 
             else:
-                e_b = self._E[i-1]
-                e._l_v = e_b._l_v + e._u
-                e._r_v = e_b._r_v + e._u
-                if(e._l_v < min_val):
-                    min_val = e._l_v
-                if(e._r_v < min_val):
-                    min_val = e._r_v
+                e_b = self.E[i-1]
+                e.l_v = e_b.l_v + e.u
+                e.r_v = e_b.r_v + e.u
+                if(e.l_v < min_val):
+                    min_val = e.l_v
+                if(e.r_v < min_val):
+                    min_val = e.r_v
 
-        for e in self._E:
+        for e in self.E:
             if(min_val < 0):
-                e._l_v += -min_val
-                e._r_v += -min_val
-            if(e._l_v < self._min_wn and e._l_v > 0):
-                self._min_wn = e._l_v
-            if(e._r_v < self._min_wn and e._r_v > 0):
-                self._min_wn = e._r_v
-            if(e._l_v > self._max_wn):
-                self._max_wn = e._l_v
-            if(e._r_v > self._max_wn):
-                self._max_wn = e._r_v
-
-        self._update = 1
-
-    def CreateSep(self,wn,X,gamma,dt,eps,img_count):
+                e.l_v += -min_val
+                e.r_v += -min_val
+            if(e.l_v < self.min_wn and e.l_v > 0):
+                self.min_wn = e.l_v
+            if(e.r_v < self.min_wn and e.r_v > 0):
+                self.min_wn = e.r_v
+            if(e.l_v > self.max_wn):
+                self.max_wn = e.l_v
+            if(e.r_v > self.max_wn):
+                self.max_wn = e.r_v
+                
+    def CreateSep(self,wn,X,dt,eps,img_count):
+        print("wn = ",wn)
         pixel_x = eps
         pixel_y = -eps
         npx = int((X[0].ub() - X[0].lb())/abs(pixel_x))
         npy = int((X[1].ub() - X[1].lb())/abs(pixel_y))
         img_aux = np.zeros((npx, npy), dtype=np.int64)
 
-        e = self._E[0]
+        e = self.E[0]
         nxt_idx = 1
         edge_out = []
         total_len = 0
-
-        while(e._l_v != wn and nxt_idx < len(self._E)):
-            edge_out.append(e._nb)
+        
+        while(e.l_v != wn and nxt_idx < len(self.E)):
+            edge_out.append(e.nb)
             total_len += 1
-            e = self._E[nxt_idx]
+            e = self.E[nxt_idx]
             nxt_idx += 1
 
-        if(e._l_v != wn):
+        if(e.l_v != wn):
             return
-
+        
         edge_in = [[]]
 
         img_aux = np.zeros((npx, npy), dtype=np.int64)
         imgs = []
-        while(total_len < len(self._E)):
-            edge_in[len(edge_in)-1].append(e._nb)
+        while(total_len < len(self.E)):
+            edge_in[len(edge_in)-1].append(e.nb)
             total_len += 1
-            for domain in e._T:
+            for traj in e.traj:
+                domain = traj.tdomain()
                 t = domain.lb()
                 last_t = domain.lb()
                 while(t < domain.ub()):
@@ -184,8 +207,8 @@ class Graph:
                     if(t > domain.ub()):
                         t = domain.ub()
 
-                    xi = gamma(Interval(last_t,t))[0]
-                    yi = gamma(Interval(last_t,t))[1]
+                    xi = traj(Interval(last_t,t))[0]
+                    yi = traj(Interval(last_t,t))[1]
 
                     x_pix = (xi - X[0].lb())/pixel_x
                     y_pix= (yi - X[1].ub())/pixel_y
@@ -196,41 +219,40 @@ class Graph:
 
                     last_t = t
 
-            if(self._E[edge_in[len(edge_in)-1][0]]._v_i == self._E[edge_in[len(edge_in)-1][len(edge_in[len(edge_in)-1]) - 1]]._v_f) :
-                end_cycle = 1
+            if(self.E[edge_in[len(edge_in)-1][0]].v_i.nb == self.E[edge_in[len(edge_in)-1][len(edge_in[len(edge_in)-1]) - 1]].v_f.nb):
                 edge_in.append([])
                
                 imgs.append(img_aux)
                 img_aux = np.zeros((npx, npy), dtype=np.int64)
 
                 found = 0
-                e = self._E[0]
+                e = self.E[0]
                 nxt_idx = 1
-                while(not found and nxt_idx < len(self._E)):
-                    if(e._l_v == wn):
+                while(not found and nxt_idx < len(self.E)):
+                    if(e.l_v == wn):
                         found = 1
                         for l in edge_in:
-                            if(e._nb in l):
+                            if(e.nb in l):
                                 found = 0
                     else:
-                        if(not e._nb in edge_out):
-                            edge_out.append(e._nb)
+                        if(not e.nb in edge_out):
+                            edge_out.append(e.nb)
                             total_len += 1
                         found = 0
 
                     if(not found):
-                        e = self._E[nxt_idx]
+                        e = self.E[nxt_idx]
                         nxt_idx += 1
 
             else:
-               
-                l_v_f = self._V[e._v_f._nb]._e_i
-                for et in l_v_f:
-                    if(et._l_v == wn):
+                l_v_f = self.V[e.v_f.nb].e_i
+                for idx_et in l_v_f:
+                    et = self.E[idx_et]
+                    if(et.l_v == wn):
                         e = et
                     else:
-                        if(not et._nb in edge_out):
-                            edge_out.append(et._nb)
+                        if(not et.nb in edge_out):
+                            edge_out.append(et.nb)
                             total_len += 1
 
         images_out = []
@@ -239,7 +261,6 @@ class Graph:
             img_count[img_count > 0] = 1
             contours, hyera = cv2.findContours(np.ascontiguousarray(img_aux.copy(), dtype=np.uint8).astype(np.uint8), cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
 
-            index=0
             max_area = 0
             c = -1
             idx = 0
@@ -280,8 +301,8 @@ class Graph:
         npy = int((X[1].ub() - X[1].lb())/abs(pixel_y))
 
         seps = []
-        left_interval = (self._tdomain/4.0) + 2*((self._tdomain/4.0).diam())
-        for domain in self._back_timel:
+        left_interval = (gamma.tdomain()/4.0) + 2*((gamma.tdomain()/4.0).diam())
+        for domain in self.back_timel:
             img_aux = np.zeros((npx, npy), dtype=np.int64)
             t = domain.lb()
             last_t = domain.lb()
@@ -289,7 +310,6 @@ class Graph:
                 t += dt
                 if(t > domain.ub()):
                     t = domain.ub()
-
 
                 xi = gamma(Interval(left_interval.ub()) - Interval(last_t,t))[0]
                 yi = gamma(Interval(left_interval.ub()) - Interval(last_t,t))[1]
@@ -339,7 +359,7 @@ class Graph:
             sep = SepCtcPair(ctcIn, ctcOut)
             seps.append(sep)
 
-        for domain in self._back_timer:
+        for domain in self.back_timer:
             img_aux = np.zeros((npx, npy), dtype=np.int64)
             t = domain.lb()
             last_t = domain.lb()
@@ -398,12 +418,11 @@ class Graph:
         return seps
 
 
-    def CreateContourSep(self,X,dt,eps,img_aux):
+    def CreateContourSep(self,X,eps,img_aux):
         pixel_x = eps
         pixel_y = -eps
         npx = int((X[0].ub() - X[0].lb())/abs(pixel_x))
         npy = int((X[1].ub() - X[1].lb())/abs(pixel_y))
-
 
         img_out = img_aux.copy()
         img_in = np.ones((npx, npy), dtype=np.uint8) - img_out
@@ -417,7 +436,7 @@ class Graph:
         return sep
 
     def CreateAllSeps(self,X,gamma,gamma_pos,dt,eps):
-            if(self._max_wn <= 0):
+            if(self.max_wn <= 0):
                 return []
             seps = dict()
             back_sep = []
@@ -428,47 +447,12 @@ class Graph:
 
             img_aux = np.zeros((npx, npy), dtype=np.int64)
 
-            for i in np.arange(self._min_wn,self._max_wn+1,1):
-                img_aux,seps[i] = self.CreateSep(i,X,gamma_pos,dt,eps,img_aux)
+            for i in np.arange(self.min_wn,self.max_wn+1,1):
+                img_aux,seps[i] = self.CreateSep(i,X,dt,eps,img_aux)
 
-            if(len(self._back_timer) > 0 or len(self._back_timel)):
+            if(len(self.back_timer) > 0 or len(self.back_timel)):
                 back_sep = self.CreateBackSeps(X,gamma,gamma_pos,dt,eps)
 
-            contour_sep = self.CreateContourSep(X,dt,eps,img_aux)
+            contour_sep = self.CreateContourSep(X,eps,img_aux)
+
             return seps,back_sep,contour_sep
-
-class Vertice:
-    def __init__(self,t_1,t_2,d_i,d_f,nb):
-        self._t_i = t_1  #interval t1
-        self._t_f = t_2 #interval t2
-        self._tdomain = Interval(t_1.lb(),t_2.ub())
-        self._d_i = d_i
-        self._d_f = d_f
-        self._e_i= []
-        self._e_f = []
-        self._nb = nb
-
-class Edge:
-    def __init__(self,t,v_i,v_f,nb):
-        self._T = t #list with values of times in gamma
-        self._r_v = 0 #right value
-        self._l_v = 0 #left value
-        self._v_i = v_i #initial vertice
-        self._v_f = v_f #final vertice
-        self._u = 0 #update indice
-        self._nb = nb
-
-
-
-if __name__ == "__main__":
-    print("vertices = ")
-    for i in range(g._n_v):
-        print("g._V[i]._tdomain = ", g._V[i]._tdomain)
-
-        print("edges = ")
-        for i in range(g._n_e):
-            print("i = ",i)
-            print("g._E[i]._T = ",g._E[i]._T)
-            print("g._E[i]._l_v = ", g._E[i]._l_v)
-            print("g._E[i]._r_v = ", g._E[i]._r_v)
-            print("g._E[i]._u = ", g._E[i]._u)
