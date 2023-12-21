@@ -220,9 +220,6 @@ for x,dx in zip(x_list,v):
         #     elif(last_box[0].ub() < 0):
         #         cm += Interval(-1,0)
 
-        
-
-        
         if(not bis):
             print('cm = ',cm)
             a = input('').split(" ")[0]

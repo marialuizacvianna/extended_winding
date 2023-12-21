@@ -404,7 +404,6 @@ class Graph:
         npx = int((X[0].ub() - X[0].lb())/abs(pixel_x))
         npy = int((X[1].ub() - X[1].lb())/abs(pixel_y))
 
-        contours, hyera = cv2.findContours(np.ascontiguousarray(img_aux.copy(), dtype=np.uint8).astype(np.uint8), cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
 
         img_out = img_aux.copy()
         img_in = np.ones((npx, npy), dtype=np.uint8) - img_out
@@ -436,7 +435,6 @@ class Graph:
                 back_sep = self.CreateBackSeps(X,gamma,gamma_pos,dt,eps)
 
             contour_sep = self.CreateContourSep(X,dt,eps,img_aux)
-
             return seps,back_sep,contour_sep
 
 class Vertice:

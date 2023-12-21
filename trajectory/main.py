@@ -133,75 +133,76 @@ pixel = 0.05 # separators precision in image contractor
 seps,back_seps,contour_sep = g.CreateAllSeps(world,gamma,gamma_plus,dt,pixel)
 
 ##################### SIVIA #####################
-epsilon = 0.1 # sivia's precision
+epsilon = 0.3# sivia's precision
 stack = deque([IntervalVector(world)])
 res_y, res_in, res_out = [], [], []
-lf = LargestFirst(epsilon/2.0)
+lf = LargestFirst()
 k = 0
+max_area = 0
 
-vibes.beginDrawing()
-for wn in seps.keys():
-    fig = VIBesFig('Winding set W' + str(wn))
-    fig.set_properties(100, 100, 800, 800)
-    fig.axis_limits(world[0].lb(),world[0].ub(),world[1].lb(),world[1].ub())
-    stack = deque([IntervalVector(world)])
-    res_y, res_in, res_out = [], [], []
-    lf = LargestFirst(epsilon/2.0)
-    k = 0
-    while len(stack) > 0:
-        X = stack.popleft()
-        k = k+1
-        nb_in = Interval(0)
-        sep = seps[wn]
-        x_in, x_out = X.copy(),X.copy()
-        sep.separate(x_in, x_out)
-        if(x_in[0].is_empty() or x_in[1].is_empty()):  #it means that box is inside completely
-            fig.draw_box(X,"gray[green]")
-        elif(not (x_out[0].is_empty() or x_out[1].is_empty())): #partially inside
-            x_in, x_out = X.copy(),X.copy()
-            contour_sep.separate(x_in, x_out)
-            if(X.max_diam() < epsilon or x_in[0].is_empty() or x_in[1].is_empty()):
-                fig.draw_box(X,"gray[yellow]")
-            else:
-                (X1, X2) = lf.bisect(X)
-                stack.append(X1)
-                stack.append(X2)
-        else:
-            fig.draw_box(X,"gray[blue]")
+# vibes.beginDrawing()
+# for wn in seps.keys():
+#     fig = VIBesFig('Winding set W' + str(wn))
+#     fig.set_properties(100, 100, 800, 800)
+#     fig.axis_limits(world[0].lb(),world[0].ub(),world[1].lb(),world[1].ub())
+#     stack = deque([IntervalVector(world)])
+#     res_y, res_in, res_out = [], [], []
+#     lf = LargestFirst()
+#     k = 0
+#     while len(stack) > 0:
+#         X = stack.popleft()
+#         k = k+1
+#         nb_in = Interval(0)
+#         sep = seps[wn]
+#         x_in, x_out = X.copy(),X.copy()
+#         sep.separate(x_in, x_out)
+#         if(x_in[0].is_empty() or x_in[1].is_empty()):  #it means that box is inside completely
+#             fig.draw_box(X,"gray[green]")
+#         elif(not (x_out[0].is_empty() or x_out[1].is_empty())): #partially inside
+#             x_in, x_out = X.copy(),X.copy()
+#             contour_sep.separate(x_in, x_out)
+#             if(X.max_diam() < epsilon or x_in[0].is_empty() or x_in[1].is_empty()):
+#                 fig.draw_box(X,"gray[yellow]")
+#             else:
+#                 (X1, X2) = lf.bisect(X)
+#                 stack.append(X1)
+#                 stack.append(X2)
+#         else:
+#             fig.draw_box(X,"gray[blue]")
 
-count = 0
-for back_sep in back_seps:
-    fig = VIBesFig('Gamma Minus ' + str(count))
-    fig.set_properties(100, 100, 800, 800)
-    fig.axis_limits(world[0].lb(),world[0].ub(),world[1].lb(),world[1].ub())
-    stack = deque([IntervalVector(world)])
-    res_y, res_in, res_out = [], [], []
-    lf = LargestFirst(epsilon/2.0)
-    k = 0
-    while len(stack) > 0:
-        X = stack.popleft()
-        k = k+1
-        nb_in = Interval(0)
+# count = 0
+# for back_sep in back_seps:
+#     fig = VIBesFig('Gamma Minus ' + str(count))
+#     fig.set_properties(100, 100, 800, 800)
+#     fig.axis_limits(world[0].lb(),world[0].ub(),world[1].lb(),world[1].ub())
+#     stack = deque([IntervalVector(world)])
+#     res_y, res_in, res_out = [], [], []
+#     lf = LargestFirst(epsilon/2.0)
+#     k = 0
+#     while len(stack) > 0:
+#         X = stack.popleft()
+#         k = k+1
+#         nb_in = Interval(0)
 
-        sep = back_sep
-        x_in, x_out = X.copy(),X.copy()
-        sep.separate(x_in, x_out)
-        if(x_in[0].is_empty() or x_in[1].is_empty()):  #it means that box is inside completely
-            fig.draw_box(X,"gray[green]")
-        elif(not (x_out[0].is_empty() or x_out[1].is_empty())): #partially inside
-            x_in, x_out = X.copy(),X.copy()
-            contour_sep.separate(x_in, x_out)
-            if(X.max_diam() < epsilon or x_in[0].is_empty() or x_in[1].is_empty()):
-                fig.draw_box(X,"gray[yellow]")
-            else:
-                (X1, X2) = lf.bisect(X)
-                stack.append(X1)
-                stack.append(X2)
-        else:
-            fig.draw_box(X,"gray[blue]")
-    count += 1
+#         sep = back_sep
+#         x_in, x_out = X.copy(),X.copy()
+#         sep.separate(x_in, x_out)
+#         if(x_in[0].is_empty() or x_in[1].is_empty()):  #it means that box is inside completely
+#             fig.draw_box(X,"gray[green]")
+#         elif(not (x_out[0].is_empty() or x_out[1].is_empty())): #partially inside
+#             x_in, x_out = X.copy(),X.copy()
+#             contour_sep.separate(x_in, x_out)
+#             if(X.max_diam() < epsilon or x_in[0].is_empty() or x_in[1].is_empty()):
+#                 fig.draw_box(X,"gray[yellow]")
+#             else:
+#                 (X1, X2) = lf.bisect(X)
+#                 stack.append(X1)
+#                 stack.append(X2)
+#         else:
+#             fig.draw_box(X,"gray[blue]")
+#     count += 1
 
-vibes.endDrawing()
+# vibes.endDrawing()
 
 fig_siv = VIBesFigMap("SIVIA")
 fig_siv.set_properties(100, 100, 800, 800)
@@ -210,6 +211,7 @@ stack = deque([IntervalVector(world)])
 res_y, res_in, res_out = [], [], []
 lf = LargestFirst(epsilon/2.0)
 k = 0
+
 while len(stack) > 0:
     X = stack.popleft()
     k = k+1
@@ -224,39 +226,53 @@ while len(stack) > 0:
         elif(not (x_out[0].is_empty() or x_out[1].is_empty())): #partially inside
             nb_in += Interval(0,1)
 
-    if(len(back_seps) > 0):
-        for back_sep in back_seps:
-            sep = back_sep
-            x_in, x_out = X.copy(),X.copy()
-            sep.separate(x_in, x_out)
-            if(x_in[0].is_empty() or x_in[1].is_empty()):  #it means that box is inside completely
-                nb_in += Interval(1)
-            elif(not (x_out[0].is_empty() or x_out[1].is_empty())): #partially inside
-                nb_in += Interval(0,1)
+    # if(len(back_seps) > 0):
+    #     for back_sep in back_seps:
+    #         sep = back_sep
+    #         x_in, x_out = X.copy(),X.copy()
+    #         sep.separate(x_in, x_out)
+    #         if(x_in[0].is_empty() or x_in[1].is_empty()):  #it means that box is inside completely
+    #             nb_in += Interval(1)
+    #         elif(not (x_out[0].is_empty() or x_out[1].is_empty())): #partially inside
+    #             nb_in += Interval(0,1)
 
     x_in, x_out = X.copy(),X.copy()
     contour_sep.separate(x_in, x_out)
     if(nb_in.ub() > nb_in.lb()):
         if(X.max_diam() < epsilon or x_in[0].is_empty() or x_in[1].is_empty()):
-            fig_siv.draw_box(X,"k[k]")
+        # if(X.max_diam() < epsilon ):
+            # fig_siv.draw_box(X,"k[k]")
+
+            if((nb_in) == Interval(0,1)):
+                fig_siv.draw_box(X,"blue[blue]")
+            elif((nb_in) == Interval(1,2)):
+                fig_siv.draw_box(X,"gray[red]")
+            elif((nb_in) == Interval(0,2)):
+                fig_siv.draw_box(X,"magenta[magenta]")
+       
+
+            if(X[0].diam()*X[1].diam() > max_area):
+                max_area = X[0].diam()*X[1].diam()
         else:
             (X1, X2) = lf.bisect(X)
             stack.append(X1)
             stack.append(X2)
     else:
-        if((nb_in) == Interval(0)):
-            fig_siv.draw_box(X,"gray[w]")
-        elif((nb_in) == Interval(1)):
-            fig_siv.draw_box(X,"gray[#CCFF99]")
-        elif((nb_in) == Interval(2)):
-            fig_siv.draw_box(X,"gray[#CCE5FF]")
-        elif((nb_in) == Interval(3)):
-            fig_siv.draw_box(X,"gray[pink]")
-        elif((nb_in) == Interval(4)):
-            fig_siv.draw_box(X,"gray[gray]")
-        elif((nb_in) == Interval(5)):
-            fig_siv.draw_box(X,"gray[orange]")
+        fig_siv.draw_box(X,"gray[w]")
+        # if((nb_in) == Interval(0)):
+        #     fig_siv.draw_box(X,"gray[w]")
+        # elif((nb_in) == Interval(1)):
+        #     fig_siv.draw_box(X,"gray[#CCFF99]")
+        # elif((nb_in) == Interval(2)):
+        #     fig_siv.draw_box(X,"gray[#CCE5FF]")
+        # elif((nb_in) == Interval(3)):
+        #     fig_siv.draw_box(X,"gray[pink]")
+        # elif((nb_in) == Interval(4)):
+        #     fig_siv.draw_box(X,"gray[gray]")
+        # elif((nb_in) == Interval(5)):
+        #     fig_siv.draw_box(X,"gray[orange]")
 
+print("max_area = ",max_area)
 total_time_end = datetime.datetime.now()
 
 print('total time = '+str((total_time_end - total_time_begin).total_seconds())+"s")
